@@ -172,14 +172,14 @@
 
             let html = `<div class="p-3 bg-green-50 border border-green-300 text-green-800 rounded text-xs sm:text-sm shadow-sm space-y-3">
                 <h3 class="font-bold text-green-900">✔️ लाईसेन्स कार्यालयमा प्राप्त भएको छ ।</h3>
-                <p class="text-xs text-gray-600">यदि यो नाम तपाईंको हो भने निश्चित गर्न बटन थिच्नुहोस्:</p><div class="space-y-2">`;
+                <p class="text-xs text-gray-600">यदि तपाइले खोज्‍नुभएको लाइसेन्समा भएको नाम यो हो भने संकलन गर्न सक्नुहुन्छ:</p><div class="space-y-2">`;
             
             data.forEach(item => {
                 const stringifiedItem = btoa(unescape(encodeURIComponent(JSON.stringify(item))));
                 html += `<div class="bg-white p-3 rounded border border-gray-300 text-gray-700 space-y-3 shadow-xs">
                     <div>लाइसेन्स धनीको नाम: <strong class="text-gray-900 text-base">${item.holder_name}</strong></div>
                     <div>लाइसेन्स नम्बर: <span class="font-mono bg-gray-100 px-1 rounded">${item.license_number}</span></div>
-                    <button onclick="selectLicenseRecord('${stringifiedItem}')" class="w-full bg-blue-800 hover:bg-blue-900 text-white text-xs font-bold py-2 rounded transition shadow-xs">यो नाम र नम्बर मेरो हो, संकलन गर्न अगाडि बढ्नुहोस्</button>
+                    <button onclick="selectLicenseRecord('${stringifiedItem}')" class="w-full bg-blue-800 hover:bg-blue-900 text-white text-xs font-bold py-2 rounded transition shadow-xs">संकलन गर्नुहोस् </button>
                 </div>`;
             });
             html += `</div></div>`;
