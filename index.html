@@ -109,12 +109,11 @@
     </div>
 
     <script>
-        // === जोडिएको वास्तविक SUPABASE कुञ्जीहरू ===
         const SUPABASE_URL = "https://gbuvycslvvqaafwnugsi.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdidXZ5Y3NsdnZxYWFmd251Z3NpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4OTUyNDEsImV4cCI6MjA5NzQ3MTI0MX0.Rl6qprZT6uMfsCX33pXgrM8owe7o6O_zAHjZUw3fixg";
 
-        // ब्राउजर सिधै कनेक्सन इन्जिन
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // यहाँ निर फिक्स गरियो: नाम फेरेर 'supabaseClient' राखियो
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let selectedLicense = null;
 
@@ -136,10 +135,10 @@
             document.getElementById('step' + step).classList.remove('hidden');
         }
 
-        // स्टेप १: सर्च फङ्सन र आन्तरिक इन्क्रिप्शन फिल्टर
+        // स्टेप १: खोजी प्रणाली
         document.getElementById('searchForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const query = document.getElementById('searchQuery').value;
+            const query = document.getElementById('searchQuery').value.trim();
             const searchBtn = document.getElementById('searchBtn');
             const resultDiv = document.getElementById('searchResult');
             
@@ -150,16 +149,23 @@
             const cleaned = cleanNumber(query);
             const pattern = `%${cleaned.split('').join('%')}%`;
 
-            const { data, error } = await supabase
+            // supabaseClient को प्रयोग गरेर डेटा खोज्ने
+            const { data, error } = await supabaseClient
                 .from('licenses')
                 .select('*')
-                .or(`license_number.ilike.${pattern},license_number.ilike.%${query.trim()}%`);
+                .or(`license_number.ilike.%${query}%,holder_name.ilike.%${query}%`);
 
             searchBtn.innerText = "खोजी गर्नुहोस्";
             searchBtn.disabled = false;
             resultDiv.classList.remove('hidden');
 
-            if (error || !data || data.length === 0) {
+            if (error) {
+                console.error("Supabase Error:", error);
+                resultDiv.innerHTML = `<div class="p-3 bg-red-50 border border-red-300 text-red-800 rounded text-xs sm:text-sm">त्रुटि: डेटाबेसमा समस्या आयो। (${error.message})</div>`;
+                return;
+            }
+
+            if (!data || data.length === 0) {
                 resultDiv.innerHTML = `<div class="p-3 bg-red-50 border border-red-300 text-red-800 rounded text-xs sm:text-sm">तपाईले उपलब्ध गराउनु भएको लाइसेन्स <span class="font-bold font-mono bg-white px-1 py-0.5 rounded border">${query}</span> हालसम्म कार्यालयमा प्राप्त भएको देखिएन । कार्यालयको वेवसाइट तथा फेसबुक पेजमा प्रकाशित सूचनाहरु हेर्दै गर्नुहोला।</div>`;
                 return;
             }
@@ -172,6 +178,7 @@
                 const stringifiedItem = btoa(unescape(encodeURIComponent(JSON.stringify(item))));
                 html += `<div class="bg-white p-3 rounded border border-gray-300 text-gray-700 space-y-3 shadow-xs">
                     <div>लाइसेन्स धनीको नाम: <strong class="text-gray-900 text-base">${item.holder_name}</strong></div>
+                    <div>लाइसेन्स नम्बर: <span class="font-mono bg-gray-100 px-1 rounded">${item.license_number}</span></div>
                     <button onclick="selectLicenseRecord('${stringifiedItem}')" class="w-full bg-blue-800 hover:bg-blue-900 text-white text-xs font-bold py-2 rounded transition shadow-xs">यो नाम र नम्बर मेरो हो, संकलन गर्न अगाडि बढ्नुहोस्</button>
                 </div>`;
             });
@@ -191,7 +198,7 @@
             goToStep(2);
         }
 
-        // स्टेप २: फारम दर्ता र डेटा लग सुरक्षित राख्ने
+        // स्टेप २: फारम दर्ता र डेटा सेभ
         document.getElementById('collectorForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = document.getElementById('collectorName').value.trim();
@@ -208,7 +215,7 @@
             submitBtn.innerText = "सुरक्षित गर्दै...";
             submitBtn.disabled = true;
 
-            const { error } = await supabase
+            const { error } = await supabaseClient
                 .from('collections')
                 .insert([{ license_id: selectedLicense.id, collector_name: name, collector_phone: phone }]);
 
@@ -221,7 +228,6 @@
                 return;
             }
 
-            // स्टेप ३ फाइनल डिजिटल रसिदमा विवरणहरू इम्पोट गर्ने
             document.getElementById('finalBoxCode').innerText = formatBoxCode(selectedLicense.box_code);
             document.getElementById('rHolder').innerText = selectedLicense.holder_name;
             document.getElementById('rNumber').innerText = selectedLicense.license_number;
