@@ -65,7 +65,7 @@
                     <div id="successMessage" class="text-center space-y-1 pb-1">
                         <span class="text-2xl">🎉</span>
                         <h3 class="font-bold text-base text-green-700">दर्ता सफलतापूर्वक पूरा भयो !</h3>
-                        <p class="text-xs text-gray-500">तलको बटन थिचेर यो आधिकारिक डिजिटल रसिद सुरक्षित राख्नुहोस्।</p>
+                        <p class="text-xs text-gray-500">तलको बटन थिचेर यो आधिकारिक डिजिटल रसिद सुरक्षित राच्छुहोस्।</p>
                     </div>
                     
                     <div class="bg-white p-4 border border-gray-300 rounded-md space-y-4">
@@ -132,7 +132,7 @@
             }
         }
 
-        // स्टेप १: परिष्कृत खोजी प्रणाली (स्मार्ट फज्जी म्याचिङ र स्पेस/हाइफन वाइपास)
+        // स्टेप १: परिष्कृत खोजी प्रणाली (संकलन भइसकेको भए विवरण देखाउने)
         document.getElementById('searchForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const query = document.getElementById('searchQuery').value.trim();
@@ -143,14 +143,13 @@
             searchBtn.disabled = true;
             resultDiv.classList.add('hidden');
 
-            // प्रयोगकर्ताले हाइफन नहाने पनि खोज्नका लागि आन्तरिक ढाँचा बनाउने
             const cleaned = cleanNumber(query);
             const pattern = `%${cleaned.split('').join('%')}%`;
 
-            // दुबै ढाँचा (मूल टेक्स्ट र सफा गरिएको ढाँचा) बाट खोजी गर्ने
+            // licenses सँगै collections टेबलमा भएको बुझिलिनेको विवरण पनि JOIN गरेर तान्ने
             const { data, error } = await supabaseClient
                 .from('licenses')
-                .select('*')
+                .select('*, collections(*)')
                 .or(`license_number.ilike.%${query}%,license_number.ilike.${pattern},holder_name.ilike.%${query}%`);
 
             searchBtn.innerText = "खोजी गर्नुहोस्";
@@ -168,6 +167,31 @@
                 return;
             }
 
+            // यदि कार्ड पहिले नै संकलन भइसकेको छ भने (is_collected === true)
+            if (data[0].is_collected) {
+                const collectorInfo = data[0].collections && data[0].collections.length > 0 ? data[0].collections[0] : null;
+                const collectorName = collectorInfo ? collectorInfo.collector_name : 'नखुलेको';
+                const collectorPhone = collectorInfo ? collectorInfo.collector_phone : 'नखुलेको';
+
+                resultDiv.innerHTML = `
+                    <div class="p-4 bg-red-50 border border-red-400 text-red-900 rounded text-xs sm:text-sm space-y-3 shadow-xs">
+                        <div class="flex items-center gap-2 text-red-700 font-bold text-sm sm:text-base">
+                            <span>🚫</span>
+                            <h3>यो लाइसेन्स कार्ड कार्यालयबाट संकलन भइसकेको छ !</h3>
+                        </div>
+                        <p class="text-gray-700">यस लाइसेन्स नम्बरसँग सम्बन्धित कार्डहरू पहिले नै बुझिलिइसकेको हुनाले पुनः फारम भर्न मिल्दैन।</p>
+                        <div class="bg-white p-3 rounded border border-red-200 space-y-1.5 text-gray-700 font-medium">
+                            <p class="text-xs text-gray-500 font-semibold border-b pb-1 mb-1 uppercase tracking-wider">बुझिलिने व्यक्तिको विवरण:</p>
+                            <p>लाइसेन्स धनी: <strong class="text-gray-950">${data[0].holder_name}</strong></p>
+                            <p>लाइसेन्स नम्बर: <span class="font-mono bg-gray-100 px-1 rounded">${data[0].license_number}</span></p>
+                            <p>बुझिलिनेको नाम: <strong class="text-gray-950">${collectorName}</strong></p>
+                            <p>मोबाइल नम्बर: <span class="font-mono text-blue-800 font-bold">${collectorPhone}</span></p>
+                        </div>
+                    </div>`;
+                return;
+            }
+
+            // यदि संकलन भएको छैन भने साविक बमोजिम नै "संकलन गर्नुहोस्" बटन देखाउने
             let html = `<div class="p-3 bg-green-50 border border-green-300 text-green-800 rounded text-xs sm:text-sm shadow-sm space-y-3">
                 <h3 class="font-bold text-green-900">✔️ लाईसेन्स कार्यालयमा प्राप्त भएको छ ।</h3>
                 <p class="text-xs text-gray-600">यदि तपाइले खोज्‍नुभएको लाइसेन्समा भएको नाम यो हो भने संकलन गर्न सक्नुहुन्छ:</p><div class="space-y-2">`;
@@ -196,7 +220,7 @@
             goToStep(2);
         }
 
-        // स्टेप २: ९६, ९७ र ९८ सिरिज स्वीकार गर्ने फारम दर्ता
+        // स्टेप २: फारम दर्ता र सोही लाइसेन्स नम्बरका सबै कार्डहरू 'संकलन भएको' जनाउने प्रणाली
         document.getElementById('collectorForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = document.getElementById('collectorName').value.trim();
@@ -204,7 +228,7 @@
             const errorDiv = document.getElementById('formError');
             const submitBtn = document.getElementById('submitDetailsBtn');
 
-            // परिमार्जित फिल्टर: ९६, ९७ र ९८ बाट सुरु हुने १० अंकको नम्बर स्वीकृत गर्ने
+            // ९६, ९७ र ९८ बाट सुरु हुने १० अंकको नेपाली मोबाइल नम्बर स्वीकृत गर्ने
             if (!/^(96|97|98)\d{8}$/.test(phone)) {
                 errorDiv.classList.remove('hidden');
                 errorDiv.innerText = "⚠️ कृपया मान्य १० अंकको नेपाली मोबाइल नम्बर (९६xxxxxxx, ९७xxxxxxx वा ९८xxxxxxx) प्रविष्ट गर्नुहोस्।";
@@ -214,19 +238,30 @@
             submitBtn.innerText = "सुरक्षित गर्दै...";
             submitBtn.disabled = true;
 
-            const { error } = await supabaseClient
+            // क) कलेक्सन टेबलमा विवरण सेभ गर्ने
+            const { error: insertError } = await supabaseClient
                 .from('collections')
                 .insert([{ license_id: selectedLicense.id, collector_name: name, collector_phone: phone }]);
 
-            submitBtn.innerText = "विवरण सुरक्षित गरी बक्स कोड हेर्नुहोस्";
-            submitBtn.disabled = false;
-
-            if (error) {
+            if (insertError) {
                 alert("विवरण सुरक्षित गर्न समस्या आयो। कृपया पुनः प्रयास गर्नुहोला।");
-                console.error(error);
+                console.error(insertError);
+                submitBtn.innerText = "विवरण सुरक्षित गरी बक्स कोड हेर्नुहोस्";
+                submitBtn.disabled = false;
                 return;
             }
 
+            // ख) यो लाइसेन्स नम्बर भएका सबै कार्डहरूलाई एकैपटक 'is_collected = true' बनाउने
+            const { error: updateError } = await supabaseClient
+                .from('licenses')
+                .update({ is_collected: true })
+                .eq('license_number', selectedLicense.license_number);
+
+            if (updateError) {
+                console.error("Status Update Error:", updateError);
+            }
+
+            // ग) रसिद विवरण सेट गर्ने
             document.getElementById('finalBoxCode').innerText = formatBoxCode(selectedLicense.box_code);
             document.getElementById('rHolder').innerText = selectedLicense.holder_name;
             document.getElementById('rNumber').innerText = selectedLicense.license_number;
@@ -243,7 +278,7 @@
             const pdfHeader = document.getElementById('pdfOnlyHeader');
             const successMsg = document.getElementById('successMessage');
             
-            // डाउनलोड गर्दा थप आकर्षक बनाउन रसिद भित्रको मेसेज र एउटा सानो हेडर ट्यागल गर्ने
+            // डाउनलोड गर्दा लेआउट मिलाउन केही क्लासहरू ट्यागल गर्ने
             pdfHeader.classList.remove('hidden');
             successMsg.classList.add('hidden');
 
@@ -255,7 +290,7 @@
                 jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
             };
 
-            // सिधै PDF डाउनलोड गर्ने र पछि ट्यागल गरिएका क्लासहरू साविककै ठाउँमा फर्काउने
+            // PDF डाउनलोड सम्पन्न भएपछि साविककै अवस्थामा फर्काउने
             html2pdf().set(opt).from(element).save().then(() => {
                 pdfHeader.classList.add('hidden');
                 successMsg.classList.remove('hidden');
