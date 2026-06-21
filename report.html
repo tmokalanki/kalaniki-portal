@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>लाइसेन्स वितरण प्रतिवेदन (Report Dashboard) - कलंकी</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased">
+
+    <div class="min-h-screen flex flex-col">
+        <header class="bg-blue-800 text-white shadow-md border-b-4 border-red-600">
+            <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="text-center sm:text-left">
+                    <h1 class="text-xl sm:text-2xl font-bold tracking-wide">यातायात व्यवस्था कार्यालय कलंकी, काठमाडौं</h1>
+                    <p class="text-xs sm:text-sm text-blue-100 mt-0.5">स्मार्ट कार्ड वितरण तथा प्रगति प्रतिवेदन प्रणाली (TMO-Report)</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="fetchAllReports()" class="bg-blue-700 hover:bg-blue-600 text-white px-4 py-2 rounded text-xs sm:text-sm font-semibold border border-blue-500 transition shadow-xs flex items-center gap-1.5">
+                        🔄 रिफ्रेस गर्नुहोस्
+                    </button>
+                    <span id="lastUpdated" class="text-[11px] text-blue-200 bg-blue-900 px-2.5 py-1 rounded font-mono">अपडेट हुँदैछ...</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+            
+            <div id="loadingOverlay" class="text-center py-12 bg-white rounded-lg border border-gray-200 shadow-xs">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-800 border-t-transparent mb-3"></div>
+                <p class="text-sm text-gray-500 font-semibold">डेटाबेसबाट प्रतिवेदन तयार गरिँदैछ, कृपया केही क्षण पर्खनुहोस्...</p>
+            </div>
+
+            <div id="reportContent" class="hidden space-y-6">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-xs flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">कुल प्राप्त कार्डहरू</p>
+                            <h3 id="statTotalCards" class="text-3xl font-extrabold text-blue-900 mt-1 font-mono">-</h3>
+                            <p class="text-xs text-gray-400 mt-1">कार्यालयमा दर्ता भएका जम्मा कार्ड</p>
+                        </div>
+                        <div class="bg-blue-50 p-3 rounded-full text-blue-700 text-2xl">📦</div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-xs flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">कुल वितरण भएका कार्डहरू</p>
+                            <h3 id="statTotalCollected" class="text-3xl font-extrabold text-green-700 mt-1 font-mono">-</h3>
+                            <p class="text-xs text-green-600 font-semibold mt-1">💡 वितरण प्रगति: <span id="statProgressPercent">-</span>%</p>
+                        </div>
+                        <div class="bg-green-50 p-3 rounded-full text-green-700 text-2xl">🤝</div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-xs flex items-center justify-between md:col-span-2 lg:col-span-1">
+                        <div>
+                            <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">वितरण हुन बाँकी कार्डहरू</p>
+                            <h3 id="statRemainingCards" class="text-3xl font-extrabold text-amber-700 mt-1 font-mono">-</h3>
+                            <p class="text-xs text-gray-400 mt-1">हाल स्टकमा सुरक्षित रहेका कार्डहरू</p>
+                        </div>
+                        <div class="bg-amber-50 p-3 rounded-full text-amber-700 text-2xl">⏳</div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg border border-gray-200 shadow-xs overflow-hidden">
+                    <div class="bg-gray-100 px-5 py-4 border-b border-gray-200 flex justify-between items-center">
+                        <h2 class="text-sm sm:text-base font-bold text-gray-700 flex items-center gap-2">
+                            <span>📅</span> कार्ड वितरण समयावधि प्रतिवेदन (Distribution Timeline)
+                        </h2>
+                        <span class="text-xs font-semibold bg-blue-100 text-blue-800 px-2.5 py-0.5 rounded-full">प्रत्यक्ष अपडेट</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-gray-200 text-center">
+                        <div class="p-6 hover:bg-gray-50 transition">
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">आज वितरण भएको</p>
+                            <h4 id="statToday" class="text-4xl font-black text-gray-900 mt-2 font-mono">-</h4>
+                            <p class="text-[11px] text-gray-500 mt-1">आज कार्यालय समयभित्र</p>
+                        </div>
+                        
+                        <div class="p-6 hover:bg-gray-50 transition">
+                            <p class="text-xs font-bold text-blue-500 uppercase tracking-wider">यो हप्ता वितरण भएको</p>
+                            <h4 id="statWeek" class="text-4xl font-black text-blue-800 mt-2 font-mono">-</h4>
+                            <p class="text-[11px] text-gray-500 mt-1">पछिल्ला ७ दिन भित्र</p>
+                        </div>
+                        
+                        <div class="p-6 hover:bg-gray-50 transition">
+                            <p class="text-xs font-bold text-purple-500 uppercase tracking-wider">यो महिना वितरण भएको</p>
+                            <h4 id="statMonth" class="text-4xl font-black text-purple-800 mt-2 font-mono">-</h4>
+                            <p class="text-[11px] text-gray-500 mt-1">पछिल्ला ३० दिन भित्र</p>
+                        </div>
+                        
+                        <div class="p-6 hover:bg-gray-50 transition">
+                            <p class="text-xs font-bold text-green-600 uppercase tracking-wider">हाल सम्म वितरण भएको</p>
+                            <h4 id="statLifetime" class="text-4xl font-black text-green-700 mt-2 font-mono">-</h4>
+                            <p class="text-[11px] text-gray-500 mt-1">पोर्टल स्थापना भएदेखि</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg border border-gray-200 shadow-xs overflow-hidden">
+                    <div class="bg-gray-100 px-5 py-4 border-b border-gray-200">
+                        <h2 class="text-sm sm:text-base font-bold text-gray-700 flex items-center gap-2">
+                            <span>📝</span> हालै वितरण गरिएका कार्डहरूको विवरण (Recent Collections)
+                        </h2>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs sm:text-sm text-left">
+                            <thead class="bg-gray-50 text-gray-600 uppercase text-[11px] font-bold tracking-wider border-b border-gray-200">
+                                <tr>
+                                    <th class="p-3 text-center w-12">क्र.सं.</th>
+                                    <th class="p-3">बुझिलिनेको नाम</th>
+                                    <th class="p-3">मोबाइल नम्बर</th>
+                                    <th class="p-3">लाइसेन्स नम्बर</th>
+                                    <th class="p-3">बक्स कोड (BOX CODE)</th>
+                                    <th class="p-3 text-right">वितरण मिति र समय</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentActivityTable" class="divide-y divide-gray-100 text-gray-700">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <footer class="bg-gray-800 text-white text-center py-3 text-xs border-t border-gray-700">
+            © २०२६ यातायात व्यवस्था कार्यालय कलंकी (TMO Kalanki) | प्रगति प्रतिवेदन ड्यासबोर्ड
+        </footer>
+    </div>
+
+    <script>
+        // Supabase को कन्फिगरेसन
+        const SUPABASE_URL = "https://gbuvycslvvqaafwnugsi.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdidXZ5Y3NsdnZxYWFmd251Z3NpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4OTUyNDEsImV4cCI6MjA5NzQ3MTI0MX0.Rl6qprZT6uMfsCX33pXgrM8owe7o6O_zAHjZUw3fixg";
+
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // प्रतिवेदन डाटाहरू गणना गर्ने मुख्य फङ्सन
+        async function fetchAllReports() {
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            document.getElementById('reportContent').classList.add('hidden');
+
+            try {
+                // १. जम्मा लाइसेन्स संख्या गणना (licenses टेबलको कुल रेकर्ड)
+                const { count: totalCards, error: errTotal } = await supabaseClient
+                    .from('licenses')
+                    .select('*', { count: 'exact', head: true });
+
+                // २. जम्मा वितरण भइसकेको कार्ड संख्या (is_collected = true भएको)
+                const { count: totalCollected, error: errCollected } = await supabaseClient
+                    .from('licenses')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('is_collected', true);
+
+                if (errTotal || errCollected) throw errTotal || errCollected;
+
+                // ३. मिति फिल्टरहरू सेट गर्ने
+                const now = new Date();
+                
+                // आज (Today) को सुरुवाती समय (00:00:00)
+                const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+                
+                // यो हप्ता (७ दिन अगाडि)
+                const oneWeekAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000)).toISOString();
+                
+                // यो महिना (३० दिन अगाडि)
+                const oneMonthAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000)).toISOString();
+
+                // आज वितरण भएको संख्या
+                const { count: todayCount, error: e1 } = await supabaseClient
+                    .from('collections')
+                    .select('*', { count: 'exact', head: true })
+                    .gte('created_at', startOfToday);
+
+                // यो हप्ता वितरण भएको संख्या
+                const { count: weekCount, error: e2 } = await supabaseClient
+                    .from('collections')
+                    .select('*', { count: 'exact', head: true })
+                    .gte('created_at', oneWeekAgo);
+
+                // यो महिना वितरण भएको संख्या
+                const { count: monthCount, error: e3 } = await supabaseClient
+                    .from('collections')
+                    .select('*', { count: 'exact', head: true })
+                    .gte('created_at', oneMonthAgo);
+
+                // हालसम्म जम्मा दर्ता भएको विवरण (collections टेबलबाट)
+                const { count: lifetimeCount, error: e4 } = await supabaseClient
+                    .from('collections')
+                    .select('*', { count: 'exact', head: true });
+
+                // ४. हालै वितरण गरिएका पछिल्ला १० वटा रेकर्डहरू तान्ने
+                const { data: recentCollections, error: e5 } = await supabaseClient
+                    .from('collections')
+                    .select('*, licenses(license_number, box_code)')
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                // स्क्रिनमा मानहरू राख्ने
+                document.getElementById('statTotalCards').innerText = totalCards.toLocaleString();
+                document.getElementById('statTotalCollected').innerText = totalCollected.toLocaleString();
+                
+                const remaining = totalCards - totalCollected;
+                document.getElementById('statRemainingCards').innerText = remaining.toLocaleString();
+
+                const progressPercent = totalCards > 0 ? ((totalCollected / totalCards) * 100).toFixed(1) : 0;
+                document.getElementById('statProgressPercent').innerText = progressPercent;
+
+                document.getElementById('statToday').innerText = (todayCount || 0).toLocaleString();
+                document.getElementById('statWeek').innerText = (weekCount || 0).toLocaleString();
+                document.getElementById('statMonth').innerText = (monthCount || 0).toLocaleString();
+                document.getElementById('statLifetime').innerText = (lifetimeCount || 0).toLocaleString();
+
+                // तालिका भर्ने
+                const tableBody = document.getElementById('recentActivityTable');
+                tableBody.innerHTML = "";
+
+                if (recentCollections && recentCollections.length > 0) {
+                    recentCollections.forEach((item, index) => {
+                        const dateObj = new Date(item.created_at);
+                        const formattedDate = dateObj.toLocaleDateString('ne-NP', { hour: '2-digit', minute: '2-digit' });
+                        
+                        const licNum = item.licenses ? item.licenses.license_number : '-';
+                        const boxCode = item.licenses ? item.licenses.box_code : '-';
+
+                        const row = `
+                            <tr class="hover:bg-gray-50 transition border-b border-gray-100">
+                                <td class="p-3 text-center font-mono text-gray-400">${index + 1}</td>
+                                <td class="p-3 font-semibold text-gray-900">${item.collector_name}</td>
+                                <td class="p-3 font-mono text-blue-700">${item.collector_phone}</td>
+                                <td class="p-3 font-mono">${licNum}</td>
+                                <td class="p-3"><span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-bold font-mono text-xs">${boxCode}</span></td>
+                                <td class="p-3 text-right text-xs text-gray-500 font-mono">${formattedDate}</td>
+                            </tr>
+                        `;
+                        tableBody.innerHTML += row;
+                    });
+                } else {
+                    tableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-400 text-xs">हालसम्म कुनै पनि वितरण विवरण उपलब्ध छैन।</td></tr>`;
+                }
+
+                // अन्तिम अपडेट समय देखाउने
+                const timeNow = new Date();
+                document.getElementById('lastUpdated').innerText = `अन्तिम अपडेट: ${timeNow.toLocaleTimeString('ne-NP')}`;
+
+            } catch (error) {
+                alert("डेटा लोड गर्दा समस्या आयो! कृपया इन्टरनेट कनेक्सन जाँच गर्नुहोस्।");
+                console.error("Report Error:", error);
+            } finally {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                document.getElementById('reportContent').classList.remove('hidden');
+            }
+        }
+
+        // पेज लोड हुँदा रिपोर्ट स्वतः चल्ने
+        window.onload = fetchAllReports;
+    </script>
+</body>
+</html>
