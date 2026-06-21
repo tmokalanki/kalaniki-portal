@@ -3,116 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>लाइसेन्स CARD खोजी पोर्टल - कलंकी</title>
+    <title>लाइसेन्स CARD खोजी पोर्टल | License Card Search Portal - Kalanki</title>
     
-    <!-- Tailwind CSS for styling -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     
-    <!-- Stable CDN for Supabase JS Library -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     
-    <!-- html2pdf.js Library for Direct PDF Download -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
-<body class="bg-gray-100 text-gray-800 p-2 sm:p-4 font-sans">
+<body class="bg-gray-100 text-gray-800 p-2 sm:p-4 font-sans antialiased">
 
-    <!-- मुख्य कन्टेनर (यही भाग मात्र PDF मा कन्भर्ट हुनेछ) -->
-    <div class="w-full max-w-xl mx-auto border border-gray-300 rounded shadow-sm overflow-hidden bg-white">
+    <div class="w-full max-w-xl mx-auto border border-gray-300 rounded-lg shadow-sm overflow-hidden bg-white">
         
-        <!-- रसिद खण्ड (PDF मा आउने मुख्य भाग) -->
         <div id="receiptContainer">
-            <!-- सरकारी थिम हेडर -->
-            <div class="bg-blue-800 text-white p-4 text-center border-b-2 border-red-600">
+            <div class="bg-blue-800 text-white p-4 text-center border-b-4 border-red-600">
                 <h1 class="text-base sm:text-lg font-bold tracking-wide">यातायात व्यवस्था कार्यालय कलंकी, काठमाडौं</h1>
-                <p class="text-xs text-gray-200 mt-0.5">लाइसेन्स कार्ड खोजी पोर्टल (TMO Kalanki)</p>
-                <!-- यो केवल PDF डाउनलोड हुँदा मात्र देखिनेछ -->
-                <div id="pdfOnlyHeader" class="hidden text-[10px] text-blue-100 mt-2 font-mono">संकलन आधिकारिक DIGITAL रसिद</div>
+                <h2 class="text-xs text-blue-200 font-medium">Transport Management Office, Kalanki, Kathmandu</h2>
+                <p class="text-[11px] text-gray-100 mt-1 font-semibold">🔍 लाइसेन्स कार्ड खोजी पोर्टल | License Card Search Portal</p>
+                <div id="pdfOnlyHeader" class="hidden text-[10px] text-blue-100 mt-2 font-mono uppercase tracking-wider font-bold">संकलन आधिकारिक DIGITAL रसिद | Official Digital Collection Receipt</div>
             </div>
 
             <div class="p-4">
                 
-                <!-- STEP 1: खोजी विन्डो र कार्ड प्रमाणीकरण -->
                 <div id="step1" class="space-y-4">
                     <form id="searchForm" class="space-y-3">
                         <div>
-                            <label class="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5">
+                            <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-0.5">
                                 आफ्नो स्मार्ट लाइसेन्स नम्बर प्रविष्ट गर्नुहोस्:
                             </label>
-                            <input type="text" id="searchQuery" placeholder="जस्तै: 03-06-89282531 वा 030689282531" required
-                                class="w-full px-3 py-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-800 text-base bg-white">
+                            <span class="block text-[11px] text-gray-400 font-medium mb-1.5">Enter your Smart License Number:</span>
+                            <input type="text" id="searchQuery" placeholder="जस्तै / Eg: 03-06-89282531" required
+                                class="w-full px-3 py-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-800 text-base bg-white font-mono">
                         </div>
-                        <button type="submit" id="searchBtn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded text-sm transition shadow-sm">
-                            खोजी गर्नुहोस्
+                        <button type="submit" id="searchBtn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded text-sm transition shadow-sm cursor-pointer">
+                            खोजी गर्नुहोस् / Search Card
                         </button>
                     </form>
                     <div id="searchResult" class="hidden"></div>
                 </div>
 
-                <!-- STEP 2: बुझिलिने व्यक्तिको फारम -->
                 <div id="step2" class="hidden space-y-4">
-                    <div id="selectedDetails" class="p-3 bg-blue-50 border border-blue-200 rounded text-xs sm:text-sm space-y-1"></div>
-                    <form id="collectorForm" class="space-y-3 bg-white p-4 border border-gray-300 rounded shadow-xs">
-                        <h4 class="font-bold text-sm text-gray-700 border-b pb-1.5">कार्यालयमा कार्ड बुझ्न आउने व्यक्तिको विवरण भर्नुहोस्:</h4>
-                        <div id="formError" class="hidden p-2 bg-amber-50 border border-amber-300 text-amber-800 text-xs rounded"></div>
+                    <div id="selectedDetails" class="p-3 bg-blue-50 border border-blue-200 rounded-md text-xs sm:text-sm space-y-1"></div>
+                    
+                    <form id="collectorForm" class="space-y-3 bg-white p-4 border border-gray-300 rounded-md shadow-xs">
+                        <div class="border-b pb-1.5">
+                            <h4 class="font-bold text-xs sm:text-sm text-gray-700">कार्यालयमा कार्ड बुझ्न आउने व्यक्तिको विवरण भर्नुहोस्:</h4>
+                            <p class="text-[11px] text-gray-400 font-medium">Enter the details of the person collecting the card:</p>
+                        </div>
+                        
+                        <div id="formError" class="hidden p-2.5 bg-amber-50 border border-amber-300 text-amber-800 text-xs rounded font-semibold"></div>
                         
                         <div>
-                            <label class="block text-xs font-semibold text-gray-600 mb-1">बुझिलिने व्यक्तिको पूरा नाम:</label>
-                            <input type="text" id="collectorName" placeholder="उदा: राम बहादुर श्रेष्ठ" required class="w-full px-3 py-2 border border-gray-300 rounded text-sm bg-white">
+                            <label class="block text-xs font-bold text-gray-700 mb-0.5">बुझिलिने व्यक्तिको पूरा नाम (Full Name):</label>
+                            <input type="text" id="collectorName" placeholder="उदा / Eg: Ram Bahadur Shrestha" required class="w-full px-3 py-2 border border-gray-300 rounded text-sm bg-white">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-gray-600 mb-1">बुझिलिने व्यक्तिको मोबाइल नम्बर (१० अंक):</label>
-                            <input type="text" id="collectorPhone" maxlength="10" placeholder="उदा: 98XXXXXXXX" required class="w-full px-3 py-2 border border-gray-300 rounded text-sm bg-white">
+                            <label class="block text-xs font-bold text-gray-700 mb-0.5">मोबाइल नम्बर (Mobile Number - 10 Digits):</label>
+                            <input type="text" id="collectorPhone" maxlength="10" placeholder="उदा / Eg: 98XXXXXXXX" required class="w-full px-3 py-2 border border-gray-300 rounded text-sm bg-white font-mono">
                         </div>
                         <div class="flex gap-2 pt-2">
-                            <button type="button" onclick="goToStep(1)" class="w-1/3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 rounded text-xs transition">पछाडि जानुहोस्</button>
-                            <button type="submit" id="submitDetailsBtn" class="w-2/3 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded text-xs transition shadow-xs">विवरण सुरक्षित गरी बक्स कोड हेर्नुहोस्</button>
+                            <button type="button" onclick="goToStep(1)" class="w-1/3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 rounded text-xs transition cursor-pointer">पछाडि / Back</button>
+                            <button type="submit" id="submitDetailsBtn" class="w-2/3 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded text-xs transition shadow-xs cursor-pointer">सुरक्षित गरी कोड हेर्नुहोस् / Save & View Box Code</button>
                         </div>
                     </form>
                 </div>
 
-                <!-- STEP 3: फाइनल डिजिटल रसिद -->
                 <div id="step3" class="hidden space-y-4">
                     <div id="successMessage" class="text-center space-y-1 pb-1">
                         <span class="text-2xl">🎉</span>
                         <h3 class="font-bold text-base text-green-700">दर्ता सफलतापूर्वक पूरा भयो !</h3>
-                        <p class="text-xs text-gray-500">तलको बटन थिचेर यो आधिकारिक डिजिटल रसिद सुरक्षित राख्नुहोस्।</p>
+                        <p class="text-xs text-green-600 font-semibold uppercase tracking-tight">Registration Completed Successfully!</p>
+                        <p class="text-[11px] text-gray-500 pt-0.5">तलको बटन थिचेर यो आधिकारिक डिजिटल रसिद सुरक्षित राख्नुहोस्। (Download PDF below)</p>
                     </div>
                     
                     <div class="bg-white p-4 border border-gray-300 rounded-md space-y-4">
-                        <!-- बक्स कोड हाइलाइट एरिया -->
                         <div class="p-3 bg-blue-600 text-white rounded text-center">
-                            <p class="text-xs uppercase tracking-wider font-semibold opacity-90">तपाईंको परिवर्तित बक्स कोड (BOX CODE)</p>
-                            <p id="finalBoxCode" class="text-3xl font-bold tracking-wider mt-0.5">-</p>
+                            <p class="text-xs uppercase tracking-wider font-bold opacity-90">तपाईंको बक्स कोड / YOUR BOX CODE</p>
+                            <p id="finalBoxCode" class="text-3xl font-black tracking-wider mt-0.5 font-mono">-</p>
                         </div>
                         
-                        <div class="p-3 bg-amber-50 border-l-4 border-amber-500 text-amber-900 rounded text-xs leading-relaxed font-semibold">
-                            📌 <strong>सुचना:</strong> कृपया कार्यालयमा कार्ड संकलन गर्न आउँदा माथि उल्लेखित बक्स कोड नम्बर अनिवार्य रूपमा वितरण काउन्टरमा टिपाउनुहोला।
+                        <div class="p-3 bg-amber-50 border-l-4 border-amber-500 text-amber-900 rounded text-xs leading-relaxed font-bold">
+                            📌 <strong>सुचना / Notice:</strong> कृपया कार्यालयमा कार्ड संकलन गर्न आउँदा माथि उल्लेखित बक्स कोड नम्बर अनिवार्य रूपमा वितरण काउन्टरमा टिपाउनुहोला। <br>
+                            <span class="font-semibold text-amber-800">(Please provide this Box Code at the counter when collecting your smart card.)</span>
                         </div>
                         
                         <div class="border border-gray-200 rounded overflow-hidden">
-                            <div class="bg-gray-100 p-2 font-bold text-xs border-b border-gray-200 text-gray-700">डिजिटल रसिद विवरण (Receipt Summary)</div>
+                            <div class="bg-gray-100 p-2 font-bold text-xs border-b border-gray-200 text-gray-700 flex justify-between">
+                                <span>📋 डिजिटल रसिद विवरण</span>
+                                <span class="font-mono text-[10px] text-gray-400 font-normal">Receipt Summary</span>
+                            </div>
                             <table class="w-full text-xs sm:text-sm text-left">
-                                <tbody>
-                                    <tr class="border-b border-gray-100"><td class="p-2.5 font-semibold text-gray-500 w-1/3">लाइसेन्स धनी</td><td id="rHolder" class="p-2.5 font-bold text-gray-900"></td></tr>
-                                    <tr class="border-b border-gray-100"><td class="p-2.5 font-semibold text-gray-500">लाइसेन्स नम्बर</td><td id="rNumber" class="p-2.5 text-gray-900"></td></tr>
-                                    <tr class="border-b border-gray-100"><td class="p-2.5 font-semibold text-gray-500">वर्ग (Category)</td><td id="rCat" class="p-2.5 font-bold text-gray-900"></td></tr>
-                                    <tr class="border-b border-gray-100"><td class="p-2.5 font-semibold text-gray-500">बुझिलिनेको नाम</td><td id="rCollector" class="p-2.5 text-gray-900"></td></tr>
-                                    <tr><td class="p-2.5 font-semibold text-gray-500">सम्पर्क नम्बर</td><td id="rPhone" class="p-2.5 text-gray-900"></td></tr>
+                                <tbody class="divide-y divide-gray-100">
+                                    <tr>
+                                        <td class="p-2.5 font-bold text-gray-500 w-5/12">लाइसेन्स धनी <br><span class="text-[9px] font-normal text-gray-400">License Holder</span></td>
+                                        <td id="rHolder" class="p-2.5 font-bold text-gray-900"></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2.5 font-bold text-gray-500">लाइसेन्स नम्बर <br><span class="text-[9px] font-normal text-gray-400">License Number</span></td>
+                                        <td id="rNumber" class="p-2.5 text-gray-900 font-mono"></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2.5 font-bold text-gray-500">वर्ग (Category) <br><span class="text-[9px] font-normal text-gray-400">Vehicle Class</span></td>
+                                        <td id="rCat" class="p-2.5 font-bold text-gray-900 font-mono"></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2.5 font-bold text-gray-500">बुझिलिनेको नाम <br><span class="text-[9px] font-normal text-gray-400">Collector's Name</span></td>
+                                        <td id="rCollector" class="p-2.5 text-gray-900"></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2.5 font-bold text-gray-500">सम्पर्क नम्बर <br><span class="text-[9px] font-normal text-gray-400">Contact Number</span></td>
+                                        <td id="rPhone" class="p-2.5 text-gray-900 font-mono"></td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
             </div>
-        </div> <!-- रसिद खण्डको अन्त्य -->
-
-        <!-- एक्सन बटनहरू (यो PDF बाहिर रहनेछ ताकि डाउनलोड गर्दा बटनहरू नआउन्) -->
-        <div id="actionButtons" class="hidden p-4 pt-0 space-y-2">
-            <button onclick="downloadReceiptPDF()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded text-sm transition shadow-sm flex items-center justify-center gap-2">📲 डिजिटल रसिद (PDF) डाउनलोड गर्नुहोस्</button>
-            <button onclick="resetApp()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 rounded text-xs transition">🔄 अर्को नयाँ खोजी गर्नुहोस्</button>
+        </div> <div id="actionButtons" class="hidden p-4 pt-0 space-y-2">
+            <button onclick="downloadReceiptPDF()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded text-sm transition shadow-sm flex items-center justify-center gap-2 cursor-pointer">📲 रसिद डाउनलोड गर्नुहोस् / Download PDF Receipt</button>
+            <button onclick="resetApp()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 rounded text-xs transition cursor-pointer">🔄 अर्को नयाँ खोजी / Search Another Card</button>
         </div>
         
-        <div class="bg-gray-200 text-center py-1.5 text-[10px] text-gray-600 border-t border-gray-300">© यातायात व्यवस्था कार्यालय कलंकी (TMO Kalanki)</div>
+        <div class="bg-gray-200 text-center py-2 text-[10px] text-gray-600 border-t border-gray-300">
+            © यातायात व्यवस्था कार्यालय कलंकी (TMO Kalanki) | Smart License Portal
+        </div>
     </div>
 
     <script>
@@ -127,9 +142,8 @@
             return str.replace(/[^0-9]/g, '').trim(); 
         }
         
-        // यहाँ परिमार्जन गरियो: डेटाबेसमा जे छ, त्यही दुरुस्तै देखाउने बनाइयो
         function formatBoxCode(boxNo) {
-            if (!boxNo) return 'उपलब्ध नभएको';
+            if (!boxNo) return 'उपलब्ध नभएको / Not Available';
             return boxNo.trim();
         }
 
@@ -152,7 +166,7 @@
             const searchBtn = document.getElementById('searchBtn');
             const resultDiv = document.getElementById('searchResult');
             
-            searchBtn.innerText = "खोज्दै...";
+            searchBtn.innerText = "खोज्दै / Searching...";
             searchBtn.disabled = true;
             resultDiv.classList.add('hidden');
 
@@ -164,54 +178,57 @@
                 .select('*, collections(*)')
                 .or(`license_number.ilike.%${query}%,license_number.ilike.${pattern},holder_name.ilike.%${query}%`);
 
-            searchBtn.innerText = "खोजी गर्नुहोस्";
+            searchBtn.innerText = "खोजी गर्नुहोस् / Search Card";
             searchBtn.disabled = false;
             resultDiv.classList.remove('hidden');
 
             if (error) {
                 console.error("Supabase Error:", error);
-                resultDiv.innerHTML = `<div class="p-3 bg-red-50 border border-red-300 text-red-800 rounded text-xs sm:text-sm">त्रुटि: डेटाबेसमा समस्या आयो। (${error.message})</div>`;
+                resultDiv.innerHTML = `<div class="p-3 bg-red-50 border border-red-300 text-red-800 rounded text-xs sm:text-sm font-semibold">त्रुटि: डेटाबेसमा समस्या आयो। / DB Error: ${error.message}</div>`;
                 return;
             }
 
             if (!data || data.length === 0) {
-                resultDiv.innerHTML = `<div class="p-3 bg-red-50 border border-red-300 text-red-800 rounded text-xs sm:text-sm">तपाईले उपलब्ध गराउनु भएको लाइसेन्स <span class="font-bold font-mono bg-white px-1 py-0.5 rounded border">${query}</span> हालसम्म कार्यालयमा प्राप्त भएको देखिएन । कार्यालयको वेवसाइट तथा फेसबुक पेजमा प्रकाशित सूचनाहरु हेर्दै गर्नुहोला।</div>`;
+                resultDiv.innerHTML = `<div class="p-3 bg-red-50 border border-red-300 text-red-800 rounded text-xs sm:text-sm space-y-1">
+                    <p class="font-bold">❌ यो लाइसेन्स हालसम्म कार्यालयमा प्राप्त भएको देखिएन।</p>
+                    <p class="text-xs text-gray-600">The entered license <span class="font-bold font-mono bg-white px-1 py-0.5 rounded border text-red-700">${query}</span> has not been received by this office yet. Please keep checking office notices.</p>
+                </div>`;
                 return;
             }
 
             if (data[0].is_collected) {
                 const collectorInfo = data[0].collections && data[0].collections.length > 0 ? data[0].collections[0] : null;
-                const collectorName = collectorInfo ? collectorInfo.collector_name : 'नखुलेको';
-                const collectorPhone = collectorInfo ? collectorInfo.collector_phone : 'नखुलेको';
+                const collectorName = collectorInfo ? collectorInfo.collector_name : 'नखुलेको / Unknown';
+                const collectorPhone = collectorInfo ? collectorInfo.collector_phone : 'नखुलेको / Unknown';
 
                 resultDiv.innerHTML = `
-                    <div class="p-4 bg-red-50 border border-red-400 text-red-900 rounded text-xs sm:text-sm space-y-3 shadow-xs">
-                        <div class="flex items-center gap-2 text-red-700 font-bold text-sm sm:text-base">
-                            <span>🚫</span>
-                            <h3>यो लाइसेन्स कार्ड कार्यालयबाट संकलन भइसकेको छ !</h3>
+                    <div class="p-4 bg-red-50 border border-red-400 text-red-900 rounded-md text-xs sm:text-sm space-y-3 shadow-xs">
+                        <div class="text-red-700 font-bold">
+                            <h3 class="text-sm sm:text-base">🚫 यो लाइसेन्स कार्ड संकलन भइसकेको छ !</h3>
+                            <p class="text-[11px] text-red-500 uppercase tracking-tight font-semibold">This license card has already been collected!</p>
                         </div>
                         <p class="text-gray-700">यस लाइसेन्स नम्बरसँग सम्बन्धित कार्डहरू पहिले नै बुझिलिइसकेको हुनाले पुनः फारम भर्न मिल्दैन।</p>
-                        <div class="bg-white p-3 rounded border border-red-200 space-y-1.5 text-gray-700 font-medium">
-                            <p class="text-xs text-gray-500 font-semibold border-b pb-1 mb-1 uppercase tracking-wider">बुझिलिने व्यक्तिको विवरण:</p>
-                            <p>लाइसेन्स धनी: <strong class="text-gray-950">${data[0].holder_name}</strong></p>
-                            <p>लाइसेन्स नम्बर: <span class="font-mono bg-gray-100 px-1 rounded">${data[0].license_number}</span></p>
-                            <p>बुझिलिनेको नाम: <strong class="text-gray-950">${collectorName}</strong></p>
-                            <p>मोबाइल नम्बर: <span class="font-mono text-blue-800 font-bold">${collectorPhone}</span></p>
+                        <div class="bg-white p-3 rounded border border-red-200 space-y-1.5 text-gray-700 font-semibold text-xs">
+                            <p class="text-[10px] text-gray-500 font-bold border-b pb-1 mb-1 uppercase tracking-wider">बुझिलिने व्यक्तिको विवरण / Collector's Details:</p>
+                            <p>लाइसेन्स धनी / Holder: <strong class="text-gray-950">${data[0].holder_name}</strong></p>
+                            <p>लाइसेन्स नम्बर / No: <span class="font-mono bg-gray-100 px-1 rounded">${data[0].license_number}</span></p>
+                            <p>बुझिलिनेको नाम / Collected By: <strong class="text-gray-950">${collectorName}</strong></p>
+                            <p>मोबाइल नम्बर / Mobile: <span class="font-mono text-blue-800 font-bold">${collectorPhone}</span></p>
                         </div>
                     </div>`;
                 return;
             }
 
-            let html = `<div class="p-3 bg-green-50 border border-green-300 text-green-800 rounded text-xs sm:text-sm shadow-sm space-y-3">
-                <h3 class="font-bold text-green-900">✔️ लाईसेन्स कार्यालयमा प्राप्त भएको छ ।</h3>
-                <p class="text-xs text-gray-600">यदि तपाइले खोज्‍नुभएको लाइसेन्समा भएको नाम यो हो भने संकलन गर्न सक्नुहुन्छ:</p><div class="space-y-2">`;
+            let html = `<div class="p-3 bg-green-50 border border-green-300 text-green-800 rounded-md text-xs sm:text-sm shadow-sm space-y-2">
+                <h3 class="font-bold text-green-900">✔️ लाइसेन्स कार्यालयमा प्राप्त भएको छ ! (Card Found)</h3>
+                <p class="text-[11px] text-gray-600">यदि विवरण सही हो भने संकलन गर्न अगाडि बढ्नुहोस् / If details match, proceed to collect:</p><div class="space-y-2">`;
             
             data.forEach(item => {
                 const stringifiedItem = btoa(unescape(encodeURIComponent(JSON.stringify(item))));
-                html += `<div class="bg-white p-3 rounded border border-gray-300 text-gray-700 space-y-3 shadow-xs">
-                    <div>लाइसेन्स धनीको नाम: <strong class="text-gray-900 text-base">${item.holder_name}</strong></div>
-                    <div>लाइसेन्स नम्बर: <span class="font-mono bg-gray-100 px-1 rounded">${item.license_number}</span></div>
-                    <button onclick="selectLicenseRecord('${stringifiedItem}')" class="w-full bg-blue-800 hover:bg-blue-900 text-white text-xs font-bold py-2 rounded transition shadow-xs">संकलन गर्नुहोस् </button>
+                html += `<div class="bg-white p-3 rounded border border-gray-300 text-gray-700 space-y-2.5 shadow-xs text-xs font-semibold">
+                    <div>लाइसेन्स धनी / Holder Name: <strong class="text-gray-900 text-sm sm:text-base block mt-0.5">${item.holder_name}</strong></div>
+                    <div>लाइसेन्स नम्बर / License No: <span class="font-mono bg-gray-100 px-1 rounded font-bold text-gray-900">${item.license_number}</span></div>
+                    <button onclick="selectLicenseRecord('${stringifiedItem}')" class="w-full bg-blue-800 hover:bg-blue-900 text-white text-xs font-bold py-2 rounded transition shadow-xs cursor-pointer">संकलन गर्नुहोस् / Proceed to Collect </button>
                 </div>`;
             });
             html += `</div></div>`;
@@ -222,10 +239,10 @@
             const item = JSON.parse(decodeURIComponent(escape(atob(encodedItem))));
             selectedLicense = item;
             document.getElementById('selectedDetails').innerHTML = `
-                <p class="text-blue-900 font-bold text-sm">निश्चित गरिएको लाइसेन्स विवरण:</p>
-                <p class="text-gray-700 pt-1">लाइसेन्स धनी: <strong>${item.holder_name}</strong></p>
-                <p class="text-gray-700">लाइसेन्स नम्बर: <span class="font-mono">${item.license_number}</span></p>
-                <p class="text-gray-700">वर्ग (Category): <span class="font-mono bg-gray-200 px-1.5 py-0.5 rounded font-bold">${item.category || '-'}</span></p>
+                <p class="text-blue-900 font-bold text-xs sm:text-sm border-b pb-1">निश्चित गरिएको विवरण / Confirmed Details:</p>
+                <p class="text-gray-700 pt-1.5 font-semibold text-xs">लाइसेन्स धनी / Holder: <strong class="text-gray-950">${item.holder_name}</strong></p>
+                <p class="text-gray-700 font-semibold text-xs">लाइसेन्स नम्बर / License No: <span class="font-mono text-gray-950">${item.license_number}</span></p>
+                <p class="text-gray-700 font-semibold text-xs">वर्ग / Category: <span class="font-mono bg-gray-200 px-1.5 py-0.5 rounded font-bold text-gray-950">${item.category || '-'}</span></p>
             `;
             goToStep(2);
         }
@@ -240,11 +257,11 @@
 
             if (!/^(96|97|98)\d{8}$/.test(phone)) {
                 errorDiv.classList.remove('hidden');
-                errorDiv.innerText = "⚠️ कृपया मान्य १० अंकको नेपाली मोबाइल नम्बर प्रविष्ट गर्नुहोस्।";
+                errorDiv.innerText = "⚠️ कृपया मान्य १० अंकको नेपाली मोबाइल नम्बर प्रविष्ट गर्नुहोस्। (Please enter a valid 10-digit Nepali mobile number.)";
                 return;
             }
             errorDiv.classList.add('hidden');
-            submitBtn.innerText = "सुरक्षित गर्दै...";
+            submitBtn.innerText = "सुरक्षित गर्दै / Saving...";
             submitBtn.disabled = true;
 
             const { error: insertError } = await supabaseClient
@@ -252,9 +269,9 @@
                 .insert([{ license_id: selectedLicense.id, collector_name: name, collector_phone: phone }]);
 
             if (insertError) {
-                alert("विवरण सुरक्षित गर्न समस्या आयो। कृपया पुनः प्रयास गर्नुहोला।");
+                alert("विवरण सुरक्षित गर्न समस्या आयो। / Error saving details. Please try again.");
                 console.error(insertError);
-                submitBtn.innerText = "विवरण सुरक्षित गरी बक्स कोड हेर्नुहोस्";
+                submitBtn.innerText = "सुरक्षित गरी कोड हेर्नुहोस् / Save & View Box Code";
                 submitBtn.disabled = false;
                 return;
             }
