@@ -82,12 +82,12 @@
                             <p id="finalBoxCode" class="text-3xl font-black tracking-wider mt-0.5 font-mono">-</p>
                         </div>
                         
-                        <div class="p-4 bg-amber-50 border-l-4 border-amber-500 text-amber-900 rounded text-xs sm:text-sm leading-relaxed space-y-2">
+                        <div class="p-4 bg-green-50 border-l-4 border-green-500 text-green-900 rounded text-xs sm:text-sm leading-relaxed space-y-2">
                             <div class="flex items-start gap-1.5">
                                 <span class="text-base">📌</span>
                                 <div class="font-bold">
-                                    <p class="text-gray-900">कृपया कार्ड संकलन गर्नका लागि यो रसिद वा बक्स कोड सहित सिधै <span class="bg-red-600 text-white px-2 py-0.5 rounded font-black text-sm">१४ नं काउन्टर</span>मा जानुहोला।</p>
-                                    <p class="text-gray-600 font-semibold text-[11px] sm:text-xs mt-1">(Please proceed directly to <span class="text-red-700 font-bold">Counter No. 14</span> with this receipt or Box Code to collect your smart card.)</p>
+                                    <p class="text-gray-900">कृपया कार्ड संकलन गर्नका लागि यो रसिद वा बक्स कोड सहित सिधै <span class="text-red-600 font-black text-sm">१४ नं काउन्टर</span>मा जानुहोला।</p>
+                                    <p class="text-gray-600 font-semibold text-[11px] sm:text-xs mt-1">(Please proceed directly to <span class="text-red-600 font-bold">Counter No. 14</span> with this receipt or Box Code to collect your smart card.)</p>
                                 </div>
                             </div>
                         </div>
@@ -300,11 +300,13 @@
             goToStep(3);
         });
 
+        // PDF डाउनलोड फङ्गसन फिक्स
         window.downloadReceiptPDF = function() {
             const element = document.getElementById('receiptContainer');
             const pdfHeader = document.getElementById('pdfOnlyHeader');
             const successMsg = document.getElementById('successMessage');
             
+            // डाउनलोड गर्दा सक्सेस मेसेज लुकाउने र आधिकारिक हेडर देखाउने
             pdfHeader.classList.remove('hidden');
             successMsg.classList.add('hidden');
 
@@ -312,11 +314,17 @@
                 margin:       [0.3, 0.3, 0.3, 0.3],
                 filename:     'TMO_Kalanki_Receipt.pdf',
                 image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true },
+                html2canvas:  { scale: 2, useCORS: true, logging: false },
                 jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
             };
 
+            // html2pdf प्रकृया सुरु र क्र्यास हुनबाट बचाउन फिक्स गरिएको
             html2pdf().set(opt).from(element).save().then(() => {
+                pdfHeader.classList.add('hidden');
+                successMsg.classList.remove('hidden');
+            }).catch((err) => {
+                console.error("PDF Generation Error: ", err);
+                // त्रुटि आएमा रिसेट गर्ने ताकि बटन अड्किएर नबसोस्
                 pdfHeader.classList.add('hidden');
                 successMsg.classList.remove('hidden');
             });
