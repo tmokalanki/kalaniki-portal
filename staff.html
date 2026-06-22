@@ -5,17 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>काउन्टर वितरण प्रणाली | Counter Distribution Dashboard</title>
     
-    <!-- Tailwind CSS for styling -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     
-    <!-- Stable CDN for Supabase JS Library -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-100 text-gray-800 p-2 sm:p-6 font-sans antialiased">
 
     <div class="w-full max-w-2xl mx-auto space-y-4">
         
-        <!-- काउन्टर हेडर -->
         <div class="bg-slate-800 text-white p-4 rounded-lg shadow-sm border-b-4 border-red-600 flex justify-between items-center">
             <div>
                 <h1 class="text-base sm:text-lg font-bold tracking-wide">यातायात व्यवस्था कार्यालय कलंकी, काठमाडौं</h1>
@@ -24,10 +21,8 @@
             <span class="text-xs bg-red-600 text-white font-bold px-2.5 py-1 rounded-full uppercase tracking-wider animate-pulse">Internal Only</span>
         </div>
 
-        <!-- मुख्य कार्यक्षेत्र -->
-        <div class="bg-white rounded-lg border border-gray-300 p-5 shadow-xs space-y-6">
+        <div class="bg-white rounded-lg border border-gray-300 p-5 shadow-xs space-y-4">
             
-            <!-- चरण १: लाइसेन्स सर्च बक्स -->
             <form id="staffSearchForm" class="space-y-2">
                 <label class="block text-sm font-bold text-gray-700">🔍 लाइसेन्स नम्बर प्रविष्ट गर्नुहोस् (इन्टर थिच्नुहोस्):</label>
                 <div class="flex gap-2">
@@ -37,44 +32,47 @@
                 </div>
             </form>
 
-            <!-- लोड हुँदा देखिने सङ्केत -->
-            <div id="loadingStatus" class="hidden text-center py-4 text-sm text-slate-600 font-bold">
+            <div id="loadingStatus" class="hidden text-center py-2 text-sm text-slate-600 font-bold">
                 <span class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-slate-800 border-t-transparent mr-2"></span> डेटा खोजिँदैछ...
             </div>
 
-            <!-- सफल सन्देश सन्झ्याल (नयाँ वितरण हुँदा मात्र आउने) -->
-            <div id="successAlert" class="hidden p-4 bg-green-50 border-2 border-green-400 text-green-900 rounded-lg space-y-1 text-center">
-                <h3 class="font-bold text-base">🎉 वितरण रेकर्ड सफलतापूर्वक अद्यावधिक भयो !</h3>
-                <p class="text-xs text-gray-600">प्रणाली सफा गरिएको छ। अब अर्को नयाँ लाइसेन्स नम्बर सर्च गर्न सक्नुहुन्छ।</p>
-            </div>
-
-            <!-- मुख्य चेतावनी विन्डो: यदि कार्ड पहिले नै वितरण भइसकेको छ भने यो देखिनेछ -->
-            <div id="alreadyCollectedAlert" class="hidden p-5 bg-red-50 border-2 border-red-400 text-red-900 rounded-lg space-y-3 shadow-xs">
-                <div class="text-center border-b border-red-200 pb-2">
-                    <h3 class="font-black text-lg text-red-700">🚫 यो लाइसेन्स कार्ड पहिले नै वितरण भइसकेको छ !</h3>
-                    <p class="text-xs text-red-600 font-medium font-mono">This card has already been dispatched.</p>
-                </div>
+            <div id="statusMessageBoxes" class="space-y-3">
                 
-                <div class="bg-white p-4 rounded-md border border-red-200 space-y-2 text-sm text-gray-700 font-semibold shadow-xs">
-                    <p class="text-xs text-slate-400 font-bold uppercase tracking-wider border-b pb-1">डेटाबेस ऐतिहासिक विवरण (System Record):</p>
-                    <p>लाइसेन्स धनी: <span id="acHolder" class="text-gray-950 font-bold">-</span></p>
-                    <p>लाइसेन्स नम्बर: <span id="acNo" class="font-mono bg-gray-100 px-1 rounded text-gray-950 font-bold">-</span></p>
-                    <div class="mt-3 pt-3 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded">
-                        <p class="text-blue-900 font-bold text-sm">बुझिलिनेको नाम:<br><span id="acCollector" class="text-gray-950 text-base block font-black mt-0.5">-</span></p>
-                        <p class="text-blue-900 font-bold text-sm">सम्पर्क नम्बर:<br><span id="acPhone" class="font-mono text-gray-950 text-base block font-black mt-0.5">-</span></p>
+                <div id="notFoundAlert" class="hidden p-4 bg-amber-50 border-2 border-amber-400 text-amber-900 rounded-lg text-center font-semibold text-sm">
+                    ⚠️ <strong>कार्ड रेकर्ड भेटिएन!</strong> तपाईंले खोज्नुभएको लाइसेन्स नम्बर यो कार्यालयको डाटाबेसमा उपलब्ध छैन।
+                </div>
+
+                <div id="dbErrorAlert" class="hidden p-4 bg-red-100 border-2 border-red-400 text-red-900 rounded-lg text-center font-semibold text-sm">
+                    💥 <strong>त्रुटि:</strong> डेटाबेससँग सम्पर्क हुन सकेन। कृपया इन्टरनेट जाँच गरी पुनः प्रयास गर्नुहोला।
+                </div>
+
+                <div id="successAlert" class="hidden p-4 bg-green-50 border-2 border-green-400 text-green-900 rounded-lg space-y-1 text-center">
+                    <h3 class="font-bold text-base">🎉 वितरण रेकرد सफलतापूर्वक अद्यावधिक भयो !</h3>
+                    <p class="text-xs text-gray-600">प्रणाली सुरक्षित छ। अब सिधै अर्को नयाँ नम्बर सर्च गर्न सक्नुहुन्छ।</p>
+                </div>
+
+                <div id="alreadyCollectedAlert" class="hidden p-5 bg-red-50 border-2 border-red-400 text-red-900 rounded-lg space-y-3 shadow-xs">
+                    <div class="text-center border-b border-red-200 pb-2">
+                        <h3 class="font-black text-lg text-red-700">📋 कार्ड स्टाटस: पहिले नै वितरण भइसकेको !</h3>
+                        <p class="text-[11px] text-red-600 font-medium font-mono">This card has already been dispatched.</p>
                     </div>
-                    <p class="text-[11px] text-gray-400 pt-1 font-mono">वितरण गरिएको समय (System Timestamp): <span id="acDate" class="text-gray-600 font-semibold">-</span></p>
+                    
+                    <div class="bg-white p-4 rounded-md border border-red-200 space-y-2 text-sm text-gray-700 font-semibold shadow-xs">
+                        <p class="text-xs text-slate-400 font-bold uppercase tracking-wider border-b pb-1">प्रणालीमा दर्ता भएको ऐतिहासिक रेकर्ड:</p>
+                        <p>लाइसेन्स धनी: <span id="acHolder" class="text-gray-950 font-bold">-</span></p>
+                        <p>लाइसेन्स नम्बर: <span id="acNo" class="font-mono bg-gray-100 px-1 rounded text-gray-950 font-bold">-</span></p>
+                        <div class="mt-3 pt-3 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded">
+                            <p class="text-blue-900 font-bold text-sm">बुझिलिनेको नाम:<br><span id="acCollector" class="text-gray-950 text-base block font-black mt-0.5">-</span></p>
+                            <p class="text-blue-900 font-bold text-sm">सम्पर्क नम्बर:<br><span id="acPhone" class="font-mono text-gray-950 text-base block font-black mt-0.5">-</span></p>
+                        </div>
+                        <p class="text-[11px] text-gray-400 pt-1 font-mono">वितरण गरिएको समय: <span id="acDate" class="text-gray-600 font-semibold">-</span></p>
+                    </div>
                 </div>
-                
-                <button onclick="resetFormToFresh()" class="w-full bg-slate-700 hover:bg-slate-800 text-white font-bold py-2 rounded text-xs transition cursor-pointer">
-                    🔄 बुझेँ, अर्को नयाँ लाइसेन्स खोज्नुहोस्
-                </button>
+
             </div>
 
-            <!-- चरण २: विवरण प्रदर्शन र वितरण फारम (यदि कार्ड बाँकी छ भने मात्र यो खुल्छ) -->
-            <div id="detailsSection" class="hidden border-t pt-5 space-y-6">
+            <div id="detailsSection" class="hidden border-t pt-4 space-y-5">
                 
-                <!-- लाइसेन्स विवरण र बक्स कोड हाइलाइट -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                     <div class="space-y-2 text-sm border p-4 bg-slate-50 rounded-lg">
                         <h3 class="font-bold text-slate-900 border-b pb-1 text-base">📋 कार्डको विवरण</h3>
@@ -83,19 +81,16 @@
                         <p class="text-gray-700">वर्ग (Category): <span id="dispCat" class="font-mono bg-gray-200 px-1.5 py-0.5 rounded font-bold">-</span></p>
                     </div>
                     
-                    <!-- बक्स कोड ठुलो अक्षरमा हाइलाइटेड -->
                     <div class="bg-amber-50 border-2 border-amber-400 p-5 rounded-lg text-center space-y-1">
                         <p class="text-xs font-bold text-amber-800 uppercase tracking-wider">📦 कार्ड रहेको बक्स कोड (BOX CODE)</p>
                         <p id="dispBoxCode" class="text-4xl font-black text-amber-900 font-mono tracking-widest">-</p>
                     </div>
                 </div>
 
-                <!-- एक्सन सेक्सन: वितरण इन्ट्री -->
                 <div class="border-2 border-blue-200 rounded-lg overflow-hidden">
                     <div class="bg-blue-800 text-white px-4 py-2 text-xs font-bold uppercase tracking-wider">🎯 वितरण अद्यावधिक विकल्पहरू (Distribution Options)</div>
                     
                     <div class="p-4 space-y-4 bg-white">
-                        <!-- विकल्प १: स्वयं आफै आएको खण्डमा -->
                         <div class="text-center pb-2 border-b">
                             <button type="button" onclick="collectBySelf()" id="selfBtn"
                                 class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg text-sm transition shadow-sm cursor-pointer flex items-center justify-center gap-2">
@@ -103,7 +98,6 @@
                             </button>
                         </div>
 
-                        <!-- विकल्प २: अन्य व्यक्ति लिन आएमा फारम -->
                         <form id="otherCollectorForm" class="space-y-3 pt-2">
                             <p class="text-xs font-bold text-gray-500 uppercase tracking-wide">वा, इच्छाएको अन्य व्यक्ति लिन आएमा विवरण भर्नुहोस्:</p>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -141,33 +135,37 @@
             return str.replace(/[^0-9]/g, '').trim(); 
         }
 
-        // अन्तर्राष्ट्रिय समय संरचनालाई नेपाल अनुकूल स्थानीय फर्म्याटमा ढाल्ने
         function formatDateTime(isoString) {
             if (!isoString) return 'नखुलेको';
             const date = new Date(isoString);
             return date.toLocaleString('ne-NP', { timeZone: 'Asia/Kathmandu', hour12: true });
         }
 
-        // चरण १: लाइसेन्स नम्बर सर्च (इन्टर प्रहार)
+        // सबै अलर्ट र बाकसहरू लुकाउने कमन फङ्सन
+        function hideAllAlertsAndSections() {
+            document.getElementById('notFoundAlert').classList.add('hidden');
+            document.getElementById('dbErrorAlert').classList.add('hidden');
+            document.getElementById('successAlert').classList.add('hidden');
+            document.getElementById('alreadyCollectedAlert').classList.add('hidden');
+            document.getElementById('detailsSection').classList.add('hidden');
+        }
+
+        // चरण १: लाइसेन्स नम्बर सर्च
         document.getElementById('staffSearchForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const query = document.getElementById('licenseInput').value.trim();
             const searchBtn = document.getElementById('searchBtn');
             const loading = document.getElementById('loadingStatus');
-            const detailsSec = document.getElementById('detailsSection');
-            const successAlert = document.getElementById('successAlert');
-            const alreadyAlert = document.getElementById('alreadyCollectedAlert');
 
             searchBtn.disabled = true;
             loading.classList.remove('hidden');
-            detailsSec.classList.add('hidden');
-            successAlert.classList.add('hidden');
-            alreadyAlert.classList.add('hidden');
+            
+            // नयाँ सर्च सुरु हुँदा पुराना सबै स्टाटस मेसेज लुकाउने
+            hideAllAlertsAndSections();
 
             const cleaned = cleanNumber(query);
             const pattern = `%${cleaned.split('').join('%')}%`;
 
-            // `collections(*)` पनि साथमै तान्ने ताकी विवरण तत्कालै देखाउन सकियोस्
             const { data, error } = await supabaseClient
                 .from('licenses')
                 .select('*, collections(*)')
@@ -176,21 +174,24 @@
             searchBtn.disabled = false;
             loading.classList.add('hidden');
 
+            // यदि डेटाबेस कनेक्सनमा त्रुटि आएमा (पेजमै देखिने)
             if (error) {
-                alert("डेटाबेस त्रुटि: विवरण खोज्न सकिएन।");
                 console.error(error);
+                document.getElementById('dbErrorAlert').classList.remove('hidden');
+                resetFormToFresh(false);
                 return;
             }
 
+            // यदि रेकर्ड फेला परेन भने (पेजमै देखिने स्टाटस)
             if (!data || data.length === 0) {
-                alert("❌ रेकर्ड भेटिएन! कृपया सही नम्बर वा डाटाबेसमा जाँच गर्नुहोस्।");
-                resetFormToFresh();
+                document.getElementById('notFoundAlert').classList.remove('hidden');
+                resetFormToFresh(false);
                 return;
             }
 
             const record = data[0];
 
-            // 🚫 मुख्य सुधार: यदि रेकर्ड वितरण भइसकेको छ भने पूरा इतिहास रातो बाकसमा देखाउने
+            // 📌 यदि कार्ड पहिले नै वितरण भइसकेको छ भने (पेजमै इतिहास बक्स खुल्नेछ)
             if (record.is_collected) {
                 const history = record.collections && record.collections.length > 0 ? record.collections[0] : null;
                 
@@ -200,25 +201,25 @@
                 document.getElementById('acPhone').innerText = (history && history.collector_phone) ? history.collector_phone : 'उपलब्ध छैन';
                 document.getElementById('acDate').innerText = history ? formatDateTime(history.created_at) : 'नखुलेको';
 
-                alreadyAlert.classList.remove('hidden');
+                document.getElementById('alreadyCollectedAlert').classList.remove('hidden');
+                resetFormToFresh(false);
                 return;
             }
 
-            // यदि कार्ड बाँकी छ भने वितरण प्रक्रिया खोल्ने
+            // यदि कार्ड वितरण गर्न बाँकी छ भने मुख्य फारम खुला गर्ने
             activeLicense = record;
             document.getElementById('dispName').innerText = record.holder_name;
             document.getElementById('dispNo').innerText = record.license_number;
             document.getElementById('dispCat').innerText = record.category || '-';
             document.getElementById('dispBoxCode').innerText = record.box_code ? record.box_code.trim() : 'N/A';
 
-            // पुराना इन्पुट विवरणहरू खाली गर्ने
             document.getElementById('cName').value = '';
             document.getElementById('cPhone').value = '';
 
-            detailsSec.classList.remove('hidden');
+            document.getElementById('detailsSection').classList.remove('hidden');
         });
 
-        // प्रक्रिया २ (क): स्वयं आफै आएको खण्डमा १-क्लिक अद्यावधिक
+        // प्रक्रिया २ (क): स्वयं आफै आएको खण्डमा १-क्लिक अपडेट
         window.collectBySelf = async function() {
             if (!activeLicense) return;
             
@@ -235,7 +236,8 @@
                 }]);
 
             if (insError) {
-                alert("त्रुटि: वितरण रेकर्ड राख्न सकिएन।");
+                hideAllAlertsAndSections();
+                document.getElementById('dbErrorAlert').classList.remove('hidden');
                 selfBtn.innerText = "👤 लाइसेन्स होल्डर स्वयं आफै उपस्थित भएको (1-Click Update)";
                 selfBtn.disabled = false;
                 return;
@@ -249,7 +251,7 @@
             showSuccessAndPrepareNext();
         }
 
-        // प्रक्रिया २ (ख): अन्य व्यक्तिको विवरण इन्ट्री गरेर सेभ गर्ने
+        // प्रक्रिया २ (ख): अन्य व्यक्तिको विवरण सुरक्षित गर्ने
         document.getElementById('otherCollectorForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!activeLicense) return;
@@ -275,7 +277,8 @@
                 }]);
 
             if (insError) {
-                alert("त्रुटि: विवरण सुरक्षित भएन।");
+                hideAllAlertsAndSections();
+                document.getElementById('dbErrorAlert').classList.remove('hidden');
                 otherSubmitBtn.innerText = "अन्य व्यक्तिको विवरण सुरक्षित गर्नुहोस्";
                 otherSubmitBtn.disabled = false;
                 return;
@@ -289,7 +292,7 @@
             showSuccessAndPrepareNext();
         });
 
-        // सफलताको जानकारी दिने र नयाँ खोजीको लागि फर्म तयार गर्ने
+        // सफलताको स्टाटस देखाउने र फर्म क्लियर गर्ने
         function showSuccessAndPrepareNext() {
             document.getElementById('detailsSection').classList.add('hidden');
             document.getElementById('successAlert').classList.remove('hidden');
@@ -299,16 +302,17 @@
             document.getElementById('otherSubmitBtn').innerText = "अन्य व्यक्तिको विवरण सुरक्षित गर्नुहोस्";
             document.getElementById('otherSubmitBtn').disabled = false;
 
-            resetFormToFresh();
+            resetFormToFresh(true);
         }
 
-        function resetFormToFresh() {
+        function resetFormToFresh(clearInput = true) {
             activeLicense = null;
             const inputField = document.getElementById('licenseInput');
-            inputField.value = '';
-            // पुराना अलर्टहरू लुकाउने (सर्च गर्दा फेरि आवश्यकता अनुसार खुल्छन्)
-            // नोट: सफलता अलर्ट तुरुन्तै नहटाउने ताकी कर्मचारीले देख्न सकोस्, अर्को सर्च हान्दा स्वतः हट्छ
+            if (clearInput) {
+                inputField.value = '';
+            }
             inputField.focus(); 
+            inputField.select(); // अर्को नम्बर टाईप गर्न सजिलो बनाउन सिलेक्ट गरिदिने
         }
     </script>
 </body>
