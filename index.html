@@ -29,7 +29,7 @@
                     <form id="searchForm" class="space-y-3">
                         <div>
                             <label class="block text-xs sm:text-sm font-bold text-gray-700 mb-0.5">
-                                आफ्नो स्मार्ट लाइसेन्स नम्बर प्रविष्ट गर्नुहोस्:
+                                आफ्नो SMART लाइसेन्स नम्बर प्रविष्ट गर्नुहोस्:
                             </label>
                             <span class="block text-[11px] text-gray-400 font-medium mb-1.5">Enter your Smart License Number:</span>
                             <input type="text" id="searchQuery" placeholder="जस्तै / Eg: 03-06-89282531" required
@@ -82,9 +82,14 @@
                             <p id="finalBoxCode" class="text-3xl font-black tracking-wider mt-0.5 font-mono">-</p>
                         </div>
                         
-                        <div class="p-3 bg-amber-50 border-l-4 border-amber-500 text-amber-900 rounded text-xs leading-relaxed font-bold">
-                            📌 <strong>सुचना / Notice:</strong> कृपया कार्यालयमा कार्ड संकलन गर्न आउँदा माथि उल्लेखित बक्स कोड नम्बर अनिवार्य रूपमा वितरण काउन्टरमा टिपाउनुहोला। <br>
-                            <span class="font-semibold text-amber-800">(Please provide this Box Code at the counter when collecting your smart card.)</span>
+                        <div class="p-4 bg-amber-50 border-l-4 border-amber-500 text-amber-900 rounded text-xs sm:text-sm leading-relaxed space-y-2">
+                            <div class="flex items-start gap-1.5">
+                                <span class="text-base">📌</span>
+                                <div class="font-bold">
+                                    <p class="text-gray-900">कृपया कार्ड संकलन गर्नका लागि यो रसिद वा बक्स कोड सहित सिधै <span class="bg-red-600 text-white px-2 py-0.5 rounded font-black text-sm">१४ नं काउन्टर</span>मा जानुहोला।</p>
+                                    <p class="text-gray-600 font-semibold text-[11px] sm:text-xs mt-1">(Please proceed directly to <span class="text-red-700 font-bold">Counter No. 14</span> with this receipt or Box Code to collect your smart card.)</p>
+                                </div>
+                            </div>
                         </div>
                         
                         <div class="border border-gray-200 rounded overflow-hidden">
@@ -120,7 +125,9 @@
                     </div>
                 </div>
             </div>
-        </div> <div id="actionButtons" class="hidden p-4 pt-0 space-y-2">
+        </div> 
+        
+        <div id="actionButtons" class="hidden p-4 pt-0 space-y-2">
             <button onclick="downloadReceiptPDF()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded text-sm transition shadow-sm flex items-center justify-center gap-2 cursor-pointer">📲 रसिद डाउनलोड गर्नुहोस् / Download PDF Receipt</button>
             <button onclick="resetApp()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 rounded text-xs transition cursor-pointer">🔄 अर्को नयाँ खोजी / Search Another Card</button>
         </div>
@@ -159,7 +166,6 @@
             }
         }
 
-        // स्टेप १: खोजी प्रणाली
         document.getElementById('searchForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const query = document.getElementById('searchQuery').value.trim();
@@ -247,7 +253,6 @@
             goToStep(2);
         }
 
-        // स्टेप २: फारम दर्ता
         document.getElementById('collectorForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = document.getElementById('collectorName').value.trim();
@@ -295,7 +300,6 @@
             goToStep(3);
         });
 
-        // स्टेप ३: PDF डाउनलोड फङ्सन
         window.downloadReceiptPDF = function() {
             const element = document.getElementById('receiptContainer');
             const pdfHeader = document.getElementById('pdfOnlyHeader');
