@@ -6,16 +6,40 @@
     <title>लाइसेन्स CARD खोजी पोर्टल | License Card Search Portal - Kalanki</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        /* प्रिन्ट गर्दा रसिद बाहेक अरु सबै कुरा स्वचालित रूपमा लुक्ने विशेष नियम */
+        @media print {
+            body {
+                background-color: #ffffff !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            #receiptContainer {
+                border: none !important;
+                box-shadow: none !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            #actionButtons, .bg-gray-200.text-center, #searchForm, #collectorForm {
+                display: none !important;
+            }
+            #pdfOnlyHeader {
+                display: block !important;
+            }
+            #successMessage {
+                display: none !important;
+            }
+        }
+    </style>
 </head>
 <body class="bg-gray-100 text-gray-800 p-2 sm:p-4 font-sans antialiased">
 
     <div class="w-full max-w-xl mx-auto border border-gray-300 rounded-lg shadow-sm overflow-hidden bg-white">
         
-        <div id="receiptContainer">
+        <div id="receiptContainer" style="background-color: #ffffff;">
             <div class="bg-blue-800 text-white p-4 text-center border-b-4 border-red-600">
                 <h1 class="text-base sm:text-lg font-bold tracking-wide">यातायात व्यवस्था कार्यालय कलंकी, काठमाडौं</h1>
                 <h2 class="text-xs text-blue-200 font-medium">Transport Management Office, Kalanki, Kathmandu</h2>
@@ -86,8 +110,8 @@
                             <div class="flex items-start gap-1.5">
                                 <span class="text-base">📌</span>
                                 <div class="font-bold">
-                                    <p class="text-gray-900">कृपया कार्ड संकलन गर्नका लागि यो रसिद वा बक्स कोड सहित सिधै <span class="text-red-600 font-black text-sm">१४ नं काउन्टर</span>मा जानुहोला।</p>
-                                    <p class="text-gray-600 font-semibold text-[11px] sm:text-xs mt-1">(Please proceed directly to <span class="text-red-600 font-bold">Counter No. 14</span> with this receipt or Box Code to collect your smart card.)</p>
+                                    <p class="text-gray-900">कृपया कार्ड संकलन गर्नका लागि यो रसिद वा बक्स कोड सहित सिधै <span class="text-red-600 font-black text-sm" style="color: #dc2626 !important;">१४ नं काउन्टर</span>मा जानुहोला।</p>
+                                    <p class="text-gray-600 font-semibold text-[11px] sm:text-xs mt-1">(Please proceed directly to <span class="text-red-600 font-bold" style="color: #dc2626 !important;">Counter No. 14</span> with this receipt or Box Code to collect your smart card.)</p>
                                 </div>
                             </div>
                         </div>
@@ -128,7 +152,7 @@
         </div> 
         
         <div id="actionButtons" class="hidden p-4 pt-0 space-y-2">
-            <button onclick="downloadReceiptPDF()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded text-sm transition shadow-sm flex items-center justify-center gap-2 cursor-pointer">📲 रसिद डाउनलोड गर्नुहोस् / Download PDF Receipt</button>
+            <button id="downloadPdfBtn" onclick="downloadReceiptPDF()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded text-sm transition shadow-sm flex items-center justify-center gap-2 cursor-pointer">📲 रसिद डाउनलोड / प्रिन्ट गर्नुहोस् (PDF)</button>
             <button onclick="resetApp()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 rounded text-xs transition cursor-pointer">🔄 अर्को नयाँ खोजी / Search Another Card</button>
         </div>
         
@@ -300,34 +324,33 @@
             goToStep(3);
         });
 
-        // PDF डाउनलोड फङ्गसन फिक्स
+        // नयाँ र अचुक डाउनलोड/प्रिन्ट विधि (Hybrid Native Method)
         window.downloadReceiptPDF = function() {
-            const element = document.getElementById('receiptContainer');
-            const pdfHeader = document.getElementById('pdfOnlyHeader');
-            const successMsg = document.getElementById('successMessage');
-            
-            // डाउनलोड गर्दा सक्सेस मेसेज लुकाउने र आधिकारिक हेडर देखाउने
-            pdfHeader.classList.remove('hidden');
-            successMsg.classList.add('hidden');
+            // पहिलो प्राथमिकता: सिधै ब्राउजरको आफ्नै प्रिन्ट विन्डो खोल्ने (जसबाट १००% 'Save as PDF' गर्न मिल्छ र कहिल्यै अड्किँदैन)
+            try {
+                window.print();
+            } catch (printErr) {
+                console.log("Native Print failed, trying library fallback...", printErr);
+                
+                // यदि ब्राउजरले विन्डो विन्डोज ब्लक गरेमा पुरानो लाइब्रेरी ब्याकअपको रुपमा चल्छ
+                const element = document.getElementById('receiptContainer');
+                const pdfHeader = document.getElementById('pdfOnlyHeader');
+                pdfHeader.classList.remove('hidden');
 
-            const opt = {
-                margin:       [0.3, 0.3, 0.3, 0.3],
-                filename:     'TMO_Kalanki_Receipt.pdf',
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true, logging: false },
-                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-            };
+                const opt = {
+                    margin:       [0.2, 0.2, 0.2, 0.2],
+                    filename:     'TMO_Kalanki_Receipt.pdf',
+                    image:        { type: 'jpeg', quality: 1.0 },
+                    html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+                    jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+                };
 
-            // html2pdf प्रकृया सुरु र क्र्यास हुनबाट बचाउन फिक्स गरिएको
-            html2pdf().set(opt).from(element).save().then(() => {
-                pdfHeader.classList.add('hidden');
-                successMsg.classList.remove('hidden');
-            }).catch((err) => {
-                console.error("PDF Generation Error: ", err);
-                // त्रुटि आएमा रिसेट गर्ने ताकि बटन अड्किएर नबसोस्
-                pdfHeader.classList.add('hidden');
-                successMsg.classList.remove('hidden');
-            });
+                html2pdf().set(opt).from(element).save().then(() => {
+                    pdfHeader.classList.add('hidden');
+                }).catch((err) => {
+                    alert("कृपया यो रसिदको स्क्रिनशट लिनुहोला!");
+                });
+            }
         }
 
         window.resetApp = function() {
