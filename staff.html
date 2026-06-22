@@ -31,7 +31,7 @@
             <form id="staffSearchForm" class="space-y-2">
                 <label class="block text-sm font-bold text-gray-700">🔍 लाइसेन्स नम्बर प्रविष्ट गर्नुहोस् (इन्टर थिच्नुहोस्):</label>
                 <div class="flex gap-2">
-                    <input type="text" id="licenseInput" placeholder="जस्तै: 03-06-89282531 वा 030689282531" required autofocus
+                    <input type="text" id="licenseInput" placeholder="जस्तै: 03-06-89282531" required autofocus
                         class="w-full px-4 py-2.5 border-2 border-slate-400 rounded focus:outline-none focus:ring-2 focus:ring-slate-800 text-lg font-mono bg-white">
                     <button type="submit" id="searchBtn" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-6 py-2.5 rounded text-sm transition cursor-pointer whitespace-nowrap">खोज्नुहोस्</button>
                 </div>
@@ -42,13 +42,36 @@
                 <span class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-slate-800 border-t-transparent mr-2"></span> डेटा खोजिँदैछ...
             </div>
 
-            <!-- सफल सन्देश सन्झ्याल -->
+            <!-- सफल सन्देश सन्झ्याल (नयाँ वितरण हुँदा मात्र आउने) -->
             <div id="successAlert" class="hidden p-4 bg-green-50 border-2 border-green-400 text-green-900 rounded-lg space-y-1 text-center">
                 <h3 class="font-bold text-base">🎉 वितरण रेकर्ड सफलतापूर्वक अद्यावधिक भयो !</h3>
                 <p class="text-xs text-gray-600">प्रणाली सफा गरिएको छ। अब अर्को नयाँ लाइसेन्स नम्बर सर्च गर्न सक्नुहुन्छ।</p>
             </div>
 
-            <!-- चरण २: विवरण प्रदर्शन र वितरण फारम -->
+            <!-- मुख्य चेतावनी विन्डो: यदि कार्ड पहिले नै वितरण भइसकेको छ भने यो देखिनेछ -->
+            <div id="alreadyCollectedAlert" class="hidden p-5 bg-red-50 border-2 border-red-400 text-red-900 rounded-lg space-y-3 shadow-xs">
+                <div class="text-center border-b border-red-200 pb-2">
+                    <h3 class="font-black text-lg text-red-700">🚫 यो लाइसेन्स कार्ड पहिले नै वितरण भइसकेको छ !</h3>
+                    <p class="text-xs text-red-600 font-medium font-mono">This card has already been dispatched.</p>
+                </div>
+                
+                <div class="bg-white p-4 rounded-md border border-red-200 space-y-2 text-sm text-gray-700 font-semibold shadow-xs">
+                    <p class="text-xs text-slate-400 font-bold uppercase tracking-wider border-b pb-1">डेटाबेस ऐतिहासिक विवरण (System Record):</p>
+                    <p>लाइसेन्स धनी: <span id="acHolder" class="text-gray-950 font-bold">-</span></p>
+                    <p>लाइसेन्स नम्बर: <span id="acNo" class="font-mono bg-gray-100 px-1 rounded text-gray-950 font-bold">-</span></p>
+                    <div class="mt-3 pt-3 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded">
+                        <p class="text-blue-900 font-bold text-sm">बुझिलिनेको नाम:<br><span id="acCollector" class="text-gray-950 text-base block font-black mt-0.5">-</span></p>
+                        <p class="text-blue-900 font-bold text-sm">सम्पर्क नम्बर:<br><span id="acPhone" class="font-mono text-gray-950 text-base block font-black mt-0.5">-</span></p>
+                    </div>
+                    <p class="text-[11px] text-gray-400 pt-1 font-mono">वितरण गरिएको समय (System Timestamp): <span id="acDate" class="text-gray-600 font-semibold">-</span></p>
+                </div>
+                
+                <button onclick="resetFormToFresh()" class="w-full bg-slate-700 hover:bg-slate-800 text-white font-bold py-2 rounded text-xs transition cursor-pointer">
+                    🔄 बुझेँ, अर्को नयाँ लाइसेन्स खोज्नुहोस्
+                </button>
+            </div>
+
+            <!-- चरण २: विवरण प्रदर्शन र वितरण फारम (यदि कार्ड बाँकी छ भने मात्र यो खुल्छ) -->
             <div id="detailsSection" class="hidden border-t pt-5 space-y-6">
                 
                 <!-- लाइसेन्स विवरण र बक्स कोड हाइलाइट -->
@@ -118,6 +141,13 @@
             return str.replace(/[^0-9]/g, '').trim(); 
         }
 
+        // अन्तर्राष्ट्रिय समय संरचनालाई नेपाल अनुकूल स्थानीय फर्म्याटमा ढाल्ने
+        function formatDateTime(isoString) {
+            if (!isoString) return 'नखुलेको';
+            const date = new Date(isoString);
+            return date.toLocaleString('ne-NP', { timeZone: 'Asia/Kathmandu', hour12: true });
+        }
+
         // चरण १: लाइसेन्स नम्बर सर्च (इन्टर प्रहार)
         document.getElementById('staffSearchForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -126,18 +156,21 @@
             const loading = document.getElementById('loadingStatus');
             const detailsSec = document.getElementById('detailsSection');
             const successAlert = document.getElementById('successAlert');
+            const alreadyAlert = document.getElementById('alreadyCollectedAlert');
 
             searchBtn.disabled = true;
             loading.classList.remove('hidden');
             detailsSec.classList.add('hidden');
             successAlert.classList.add('hidden');
+            alreadyAlert.classList.add('hidden');
 
             const cleaned = cleanNumber(query);
             const pattern = `%${cleaned.split('').join('%')}%`;
 
+            // `collections(*)` पनि साथमै तान्ने ताकी विवरण तत्कालै देखाउन सकियोस्
             const { data, error } = await supabaseClient
                 .from('licenses')
-                .select('*')
+                .select('*, collections(*)')
                 .or(`license_number.ilike.%${query}%,license_number.ilike.${pattern}`);
 
             searchBtn.disabled = false;
@@ -157,20 +190,28 @@
 
             const record = data[0];
 
+            // 🚫 मुख्य सुधार: यदि रेकर्ड वितरण भइसकेको छ भने पूरा इतिहास रातो बाकसमा देखाउने
             if (record.is_collected) {
-                alert(`🚫 यो कार्ड पहिले नै वितरण भइसकेको छ!\n\nलाइसेन्स धनी: ${record.holder_name}`);
-                resetFormToFresh();
+                const history = record.collections && record.collections.length > 0 ? record.collections[0] : null;
+                
+                document.getElementById('acHolder').innerText = record.holder_name;
+                document.getElementById('acNo').innerText = record.license_number;
+                document.getElementById('acCollector').innerText = history ? history.collector_name : 'स्वयं (वा रेकर्ड नमिलेको)';
+                document.getElementById('acPhone').innerText = (history && history.collector_phone) ? history.collector_phone : 'उपलब्ध छैन';
+                document.getElementById('acDate').innerText = history ? formatDateTime(history.created_at) : 'नखुलेको';
+
+                alreadyAlert.classList.remove('hidden');
                 return;
             }
 
-            // डाटा प्रदर्शन गर्ने
+            // यदि कार्ड बाँकी छ भने वितरण प्रक्रिया खोल्ने
             activeLicense = record;
             document.getElementById('dispName').innerText = record.holder_name;
             document.getElementById('dispNo').innerText = record.license_number;
             document.getElementById('dispCat').innerText = record.category || '-';
             document.getElementById('dispBoxCode').innerText = record.box_code ? record.box_code.trim() : 'N/A';
 
-            // फर्महरू क्लियर गर्ने
+            // पुराना इन्पुट विवरणहरू खाली गर्ने
             document.getElementById('cName').value = '';
             document.getElementById('cPhone').value = '';
 
@@ -185,13 +226,12 @@
             selfBtn.innerText = "प्रक्रिया चल्दैछ...";
             selfBtn.disabled = true;
 
-            // १. collections मा इन्ट्री थप्ने (संकलकको नाम = होल्डरको नाम, फोन = खाली)
             const { error: insError } = await supabaseClient
                 .from('collections')
                 .insert([{ 
                     license_id: activeLicense.id, 
-                    collector_name: activeLicense.holder_name, 
-                    collector_phone: '' 
+                    collector_name: activeLicense.holder_name + " (स्वयं)", 
+                    collector_phone: 'होल्डर स्वयं' 
                 }]);
 
             if (insError) {
@@ -201,7 +241,6 @@
                 return;
             }
 
-            // २. licenses मा स्थिति true बनाउने
             await supabaseClient
                 .from('licenses')
                 .update({ is_collected: true })
@@ -227,7 +266,6 @@
             otherSubmitBtn.innerText = "सुरक्षित गर्दै...";
             otherSubmitBtn.disabled = true;
 
-            // १. collections मा इन्ट्री थप्ने
             const { error: insError } = await supabaseClient
                 .from('collections')
                 .insert([{ 
@@ -243,7 +281,6 @@
                 return;
             }
 
-            // २. licenses मा स्थिति true बनाउने
             await supabaseClient
                 .from('licenses')
                 .update({ is_collected: true })
@@ -257,7 +294,6 @@
             document.getElementById('detailsSection').classList.add('hidden');
             document.getElementById('successAlert').classList.remove('hidden');
             
-            // बटनहरू पूर्ववत् अवस्थामा फर्काउने
             document.getElementById('selfBtn').innerText = "👤 लाइसेन्स होल्डर स्वयं आफै उपस्थित भएको (1-Click Update)";
             document.getElementById('selfBtn').disabled = false;
             document.getElementById('otherSubmitBtn').innerText = "अन्य व्यक्तिको विवरण सुरक्षित गर्नुहोस्";
@@ -270,7 +306,9 @@
             activeLicense = null;
             const inputField = document.getElementById('licenseInput');
             inputField.value = '';
-            inputField.focus(); // स्वतः माउस कर्सर सर्च बक्समा लैजाने
+            // पुराना अलर्टहरू लुकाउने (सर्च गर्दा फेरि आवश्यकता अनुसार खुल्छन्)
+            // नोट: सफलता अलर्ट तुरुन्तै नहटाउने ताकी कर्मचारीले देख्न सकोस्, अर्को सर्च हान्दा स्वतः हट्छ
+            inputField.focus(); 
         }
     </script>
 </body>
