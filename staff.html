@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>काउन्टर वितरण प्रणाली | Counter Distribution Dashboard</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    
+    <!-- Stable CDN for Supabase JS Library -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-100 text-gray-800 p-2 sm:p-6 font-sans antialiased">
+
+    <div class="w-full max-w-2xl mx-auto space-y-4">
+        
+        <!-- काउन्टर हेडर -->
+        <div class="bg-slate-800 text-white p-4 rounded-lg shadow-sm border-b-4 border-red-600 flex justify-between items-center">
+            <div>
+                <h1 class="text-base sm:text-lg font-bold tracking-wide">यातायात व्यवस्था कार्यालय कलंकी, काठमाडौं</h1>
+                <p class="text-xs text-slate-300">🏢 कर्मचारी काउन्टर वितरण प्रणाली (Staff Portal)</p>
+            </div>
+            <span class="text-xs bg-red-600 text-white font-bold px-2.5 py-1 rounded-full uppercase tracking-wider animate-pulse">Internal Only</span>
+        </div>
+
+        <!-- मुख्य कार्यक्षेत्र -->
+        <div class="bg-white rounded-lg border border-gray-300 p-5 shadow-xs space-y-6">
+            
+            <!-- चरण १: लाइसेन्स सर्च बक्स -->
+            <form id="staffSearchForm" class="space-y-2">
+                <label class="block text-sm font-bold text-gray-700">🔍 लाइसेन्स नम्बर प्रविष्ट गर्नुहोस् (इन्टर थिच्नुहोस्):</label>
+                <div class="flex gap-2">
+                    <input type="text" id="licenseInput" placeholder="जस्तै: 03-06-89282531 वा 030689282531" required autofocus
+                        class="w-full px-4 py-2.5 border-2 border-slate-400 rounded focus:outline-none focus:ring-2 focus:ring-slate-800 text-lg font-mono bg-white">
+                    <button type="submit" id="searchBtn" class="bg-slate-800 hover:bg-slate-900 text-white font-bold px-6 py-2.5 rounded text-sm transition cursor-pointer whitespace-nowrap">खोज्नुहोस्</button>
+                </div>
+            </form>
+
+            <!-- लोड हुँदा देखिने सङ्केत -->
+            <div id="loadingStatus" class="hidden text-center py-4 text-sm text-slate-600 font-bold">
+                <span class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-slate-800 border-t-transparent mr-2"></span> डेटा खोजिँदैछ...
+            </div>
+
+            <!-- सफल सन्देश सन्झ्याल -->
+            <div id="successAlert" class="hidden p-4 bg-green-50 border-2 border-green-400 text-green-900 rounded-lg space-y-1 text-center">
+                <h3 class="font-bold text-base">🎉 वितरण रेकर्ड सफलतापूर्वक अद्यावधिक भयो !</h3>
+                <p class="text-xs text-gray-600">प्रणाली सफा गरिएको छ। अब अर्को नयाँ लाइसेन्स नम्बर सर्च गर्न सक्नुहुन्छ।</p>
+            </div>
+
+            <!-- चरण २: विवरण प्रदर्शन र वितरण फारम -->
+            <div id="detailsSection" class="hidden border-t pt-5 space-y-6">
+                
+                <!-- लाइसेन्स विवरण र बक्स कोड हाइलाइट -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                    <div class="space-y-2 text-sm border p-4 bg-slate-50 rounded-lg">
+                        <h3 class="font-bold text-slate-900 border-b pb-1 text-base">📋 कार्डको विवरण</h3>
+                        <p class="text-gray-700">लाइसेन्स धनी: <strong id="dispName" class="text-gray-950 text-base">-</strong></p>
+                        <p class="text-gray-700">लाइसेन्स नम्बर: <span id="dispNo" class="font-mono bg-gray-200 px-1 rounded font-bold">-</span></p>
+                        <p class="text-gray-700">वर्ग (Category): <span id="dispCat" class="font-mono bg-gray-200 px-1.5 py-0.5 rounded font-bold">-</span></p>
+                    </div>
+                    
+                    <!-- बक्स कोड ठुलो अक्षरमा हाइलाइटेड -->
+                    <div class="bg-amber-50 border-2 border-amber-400 p-5 rounded-lg text-center space-y-1">
+                        <p class="text-xs font-bold text-amber-800 uppercase tracking-wider">📦 कार्ड रहेको बक्स कोड (BOX CODE)</p>
+                        <p id="dispBoxCode" class="text-4xl font-black text-amber-900 font-mono tracking-widest">-</p>
+                    </div>
+                </div>
+
+                <!-- एक्सन सेक्सन: वितरण इन्ट्री -->
+                <div class="border-2 border-blue-200 rounded-lg overflow-hidden">
+                    <div class="bg-blue-800 text-white px-4 py-2 text-xs font-bold uppercase tracking-wider">🎯 वितरण अद्यावधिक विकल्पहरू (Distribution Options)</div>
+                    
+                    <div class="p-4 space-y-4 bg-white">
+                        <!-- विकल्प १: स्वयं आफै आएको खण्डमा -->
+                        <div class="text-center pb-2 border-b">
+                            <button type="button" onclick="collectBySelf()" id="selfBtn"
+                                class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg text-sm transition shadow-sm cursor-pointer flex items-center justify-center gap-2">
+                                👤 लाइसेन्स होल्डर स्वयं आफै उपस्थित भएको (1-Click Update)
+                            </button>
+                        </div>
+
+                        <!-- विकल्प २: अन्य व्यक्ति लिन आएमा फारम -->
+                        <form id="otherCollectorForm" class="space-y-3 pt-2">
+                            <p class="text-xs font-bold text-gray-500 uppercase tracking-wide">वा, इच्छाएको अन्य व्यक्ति लिन आएमा विवरण भर्नुहोस्:</p>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 mb-1">बुझिलिनेको नाम:</label>
+                                    <input type="text" id="cName" placeholder="उदा: राम बहादुर श्रेष्ठ" required class="w-full px-3 py-2 border border-gray-300 rounded text-sm bg-white">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 mb-1">मोबाइल नम्बर (१० अंक):</label>
+                                    <input type="text" id="cPhone" maxlength="10" placeholder="उदा: 98XXXXXXXX" required class="w-full px-3 py-2 border border-gray-300 rounded text-sm bg-white font-mono">
+                                </div>
+                            </div>
+                            <button type="submit" id="otherSubmitBtn" class="w-full bg-slate-700 hover:bg-slate-800 text-white font-bold py-2 rounded text-xs transition cursor-pointer">
+                                अन्य व्यक्तिको विवरण सुरक्षित गर्नुहोस्
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        
+        <div class="text-center text-[11px] text-gray-500">© २०२६ यातायात व्यवस्था कार्यालय कलंकी (Internal Counter Dashboard)</div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://gbuvycslvvqaafwnugsi.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdidXZ5Y3NsdnZxYWFmd251Z3NpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4OTUyNDEsImV4cCI6MjA5NzQ3MTI0MX0.Rl6qprZT6uMfsCX33pXgrM8owe7o6O_zAHjZUw3fixg";
+
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let activeLicense = null;
+
+        function cleanNumber(str) { 
+            return str.replace(/[^0-9]/g, '').trim(); 
+        }
+
+        // चरण १: लाइसेन्स नम्बर सर्च (इन्टर प्रहार)
+        document.getElementById('staffSearchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const query = document.getElementById('licenseInput').value.trim();
+            const searchBtn = document.getElementById('searchBtn');
+            const loading = document.getElementById('loadingStatus');
+            const detailsSec = document.getElementById('detailsSection');
+            const successAlert = document.getElementById('successAlert');
+
+            searchBtn.disabled = true;
+            loading.classList.remove('hidden');
+            detailsSec.classList.add('hidden');
+            successAlert.classList.add('hidden');
+
+            const cleaned = cleanNumber(query);
+            const pattern = `%${cleaned.split('').join('%')}%`;
+
+            const { data, error } = await supabaseClient
+                .from('licenses')
+                .select('*')
+                .or(`license_number.ilike.%${query}%,license_number.ilike.${pattern}`);
+
+            searchBtn.disabled = false;
+            loading.classList.add('hidden');
+
+            if (error) {
+                alert("डेटाबेस त्रुटि: विवरण खोज्न सकिएन।");
+                console.error(error);
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                alert("❌ रेकर्ड भेटिएन! कृपया सही नम्बर वा डाटाबेसमा जाँच गर्नुहोस्।");
+                resetFormToFresh();
+                return;
+            }
+
+            const record = data[0];
+
+            if (record.is_collected) {
+                alert(`🚫 यो कार्ड पहिले नै वितरण भइसकेको छ!\n\nलाइसेन्स धनी: ${record.holder_name}`);
+                resetFormToFresh();
+                return;
+            }
+
+            // डाटा प्रदर्शन गर्ने
+            activeLicense = record;
+            document.getElementById('dispName').innerText = record.holder_name;
+            document.getElementById('dispNo').innerText = record.license_number;
+            document.getElementById('dispCat').innerText = record.category || '-';
+            document.getElementById('dispBoxCode').innerText = record.box_code ? record.box_code.trim() : 'N/A';
+
+            // फर्महरू क्लियर गर्ने
+            document.getElementById('cName').value = '';
+            document.getElementById('cPhone').value = '';
+
+            detailsSec.classList.remove('hidden');
+        });
+
+        // प्रक्रिया २ (क): स्वयं आफै आएको खण्डमा १-क्लिक अद्यावधिक
+        window.collectBySelf = async function() {
+            if (!activeLicense) return;
+            
+            const selfBtn = document.getElementById('selfBtn');
+            selfBtn.innerText = "प्रक्रिया चल्दैछ...";
+            selfBtn.disabled = true;
+
+            // १. collections मा इन्ट्री थप्ने (संकलकको नाम = होल्डरको नाम, फोन = खाली)
+            const { error: insError } = await supabaseClient
+                .from('collections')
+                .insert([{ 
+                    license_id: activeLicense.id, 
+                    collector_name: activeLicense.holder_name, 
+                    collector_phone: '' 
+                }]);
+
+            if (insError) {
+                alert("त्रुटि: वितरण रेकर्ड राख्न सकिएन।");
+                selfBtn.innerText = "👤 लाइसेन्स होल्डर स्वयं आफै उपस्थित भएको (1-Click Update)";
+                selfBtn.disabled = false;
+                return;
+            }
+
+            // २. licenses मा स्थिति true बनाउने
+            await supabaseClient
+                .from('licenses')
+                .update({ is_collected: true })
+                .eq('id', activeLicense.id);
+
+            showSuccessAndPrepareNext();
+        }
+
+        // प्रक्रिया २ (ख): अन्य व्यक्तिको विवरण इन्ट्री गरेर सेभ गर्ने
+        document.getElementById('otherCollectorForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!activeLicense) return;
+
+            const name = document.getElementById('cName').value.trim();
+            const phone = document.getElementById('cPhone').value.trim();
+            const otherSubmitBtn = document.getElementById('otherSubmitBtn');
+
+            if (!/^(96|97|98)\d{8}$/.test(phone)) {
+                alert("⚠️ कृपया मान्य १० अंकको मोबाइल नम्बर हाल्नुहोस्।");
+                return;
+            }
+
+            otherSubmitBtn.innerText = "सुरक्षित गर्दै...";
+            otherSubmitBtn.disabled = true;
+
+            // १. collections मा इन्ट्री थप्ने
+            const { error: insError } = await supabaseClient
+                .from('collections')
+                .insert([{ 
+                    license_id: activeLicense.id, 
+                    collector_name: name, 
+                    collector_phone: phone 
+                }]);
+
+            if (insError) {
+                alert("त्रुटि: विवरण सुरक्षित भएन।");
+                otherSubmitBtn.innerText = "अन्य व्यक्तिको विवरण सुरक्षित गर्नुहोस्";
+                otherSubmitBtn.disabled = false;
+                return;
+            }
+
+            // २. licenses मा स्थिति true बनाउने
+            await supabaseClient
+                .from('licenses')
+                .update({ is_collected: true })
+                .eq('id', activeLicense.id);
+
+            showSuccessAndPrepareNext();
+        });
+
+        // सफलताको जानकारी दिने र नयाँ खोजीको लागि फर्म तयार गर्ने
+        function showSuccessAndPrepareNext() {
+            document.getElementById('detailsSection').classList.add('hidden');
+            document.getElementById('successAlert').classList.remove('hidden');
+            
+            // बटनहरू पूर्ववत् अवस्थामा फर्काउने
+            document.getElementById('selfBtn').innerText = "👤 लाइसेन्स होल्डर स्वयं आफै उपस्थित भएको (1-Click Update)";
+            document.getElementById('selfBtn').disabled = false;
+            document.getElementById('otherSubmitBtn').innerText = "अन्य व्यक्तिको विवरण सुरक्षित गर्नुहोस्";
+            document.getElementById('otherSubmitBtn').disabled = false;
+
+            resetFormToFresh();
+        }
+
+        function resetFormToFresh() {
+            activeLicense = null;
+            const inputField = document.getElementById('licenseInput');
+            inputField.value = '';
+            inputField.focus(); // स्वतः माउस कर्सर सर्च बक्समा लैजाने
+        }
+    </script>
+</body>
+</html>
