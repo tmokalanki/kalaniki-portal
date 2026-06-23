@@ -50,27 +50,57 @@
                     <p class="text-xs text-gray-600">यस नम्बरका सबै कार्डहरू प्रणालीमा Collected भइसके। अब अर्को नम्बर खोज्नुहोस्।</p>
                 </div>
 
+                <!-- 🔴 पहिले नै वितरण भइसकेको अवस्थामा देखिने बाकस -->
+                <div id="alreadyCollectedAlert" class="hidden p-5 bg-red-50 border-2 border-red-400 text-red-900 rounded-lg space-y-3 shadow-xs">
+                    <div class="text-center border-b border-red-200 pb-2">
+                        <h3 class="font-black text-lg text-red-700">📋 कार्ड स्टाटस: पहिले नै वितरण भइसकेको !</h3>
+                        <p class="text-[11px] text-red-600 font-medium font-mono">This card has already been dispatched.</p>
+                    </div>
+                    
+                    <!-- 📦 ऐतिहासिक रेकर्डमा थपिएको बक्सकोड लिष्ट सेक्सन -->
+                    <div class="bg-amber-100 p-3 rounded-md border border-amber-300 text-sm text-amber-900">
+                        <p class="font-bold mb-1 flex justify-between items-center">
+                            <span>📦 यस लाइसेन्सका सबै कार्डहरूको बाकस कोडहरू (Box Codes):</span>
+                            <span id="historyCardCount" class="bg-amber-900 text-white text-[10px] px-2 py-0.5 rounded-full font-black">- Cards</span>
+                        </p>
+                        <div id="historyBoxCodesList" class="flex flex-wrap gap-2 mt-1.5">
+                            <!-- बक्सकोडका ब्याजहरू यहाँ जाभास्क्रिप्टले भर्नेछ -->
+                        </div>
+                        <p class="text-[11px] text-amber-800 mt-2 bg-white/50 p-1.5 rounded border border-amber-200/60 font-medium">
+                            💡 <strong>सुझाव:</strong> यदि सेवाग्राहीले कुनै कार्ड छुट्यो भन्दै आएमा माथिका बक्सहरू रुजु गरी पुराना कार्डहरू नष्ट (Dispose) गरिदिनुहोला।
+                        </p>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-md border border-red-200 space-y-2 text-sm text-gray-700 font-semibold shadow-xs">
+                        <p class="text-xs text-slate-400 font-bold uppercase tracking-wider border-b pb-1">प्रणालीमा दर्ता भएको ऐतिहासिक रेकर्ड:</p>
+                        <p>लाइसेन्स धनी: <span id="acHolder" class="text-gray-950 font-bold">-</span></p>
+                        <p>लाइसेन्स नम्बर: <span id="acNo" class="font-mono bg-gray-100 px-1 rounded text-gray-950 font-bold">-</span></p>
+                        <div class="mt-3 pt-3 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded">
+                            <p class="text-blue-900 font-bold text-sm">बुझिलिनेको नाम:<br><span id="acCollector" class="text-gray-950 text-base block font-black mt-0.5">-</span></p>
+                            <p class="text-blue-900 font-bold text-sm">सम्पर्क नम्बर:<br><span id="acPhone" class="font-mono text-gray-950 text-base block font-black mt-0.5">-</span></p>
+                        </div>
+                        <p class="text-[11px] text-gray-400 pt-1 font-mono">वितरण गरिएको समय: <span id="acDate" class="text-gray-600 font-semibold">-</span></p>
+                    </div>
+                </div>
+
             </div>
 
-            <!-- मुख्य विवरण र कार्य क्षेत्र -->
+            <!-- मुख्य विवरण र कार्य क्षेत्र (वितरण गर्न बाँकी हुँदा खुल्ने) -->
             <div id="detailsSection" class="hidden border-t pt-4 space-y-5">
                 
-                <!-- 📦 सबै बाकस कोडहरू लिस्ट गर्ने र डिस्पोजल सन्देश दिने सेक्सन -->
                 <div class="bg-amber-50 border-2 border-amber-400 p-4 rounded-lg space-y-3">
                     <div class="flex justify-between items-center border-b border-amber-200 pb-2">
                         <p class="text-sm font-bold text-amber-900 flex items-center gap-1">📦 प्रणालीमा फेला परेका सबै कार्डका बाकस कोडहरू (Box Codes):</p>
                         <span id="cardCountBadge" class="bg-amber-900 text-white text-xs font-black px-2 py-0.5 rounded-full">- Cards</span>
                     </div>
-                    <div id="dispBoxCodesList" class="flex flex-wrap gap-2 py-1">
-                        <!-- सबै कार्डका बक्सकोडहरू यहाँ ब्याज बनेर आउनेछन् -->
-                    </div>
+                    <div id="dispBoxCodesList" class="flex flex-wrap gap-2 py-1"></div>
                     <p class="text-xs text-amber-800 font-medium bg-white/60 p-2 rounded border border-amber-200">
                         💡 <strong>कर्मचारीको लागि सूचना:</strong> माथि उल्लेखित सबै बाकसहरूबाट कार्ड निकाली सेवाग्राहीलाई मुख्य कार्ड दिनुहोस् र बाँकी पुराना/डुप्लिकेट कार्डहरू **डिस्पोज (Disposal)** काउन्टरमा राख्नुहोस्।
                     </p>
                 </div>
 
                 <div class="space-y-2 text-sm border p-4 bg-slate-50 rounded-lg">
-                    <h3 class="font-bold text-slate-900 border-b pb-1 text-base">📋 कार्डधनीको विवरण</h3>
+                    <h3 class="font-bold text-slate-900 border-b pb-1 text-base">📋 CARD DETAILS</h3>
                     <p class="text-gray-700">लाइसेन्स धनी: <strong id="dispName" class="text-gray-950 text-base">-</strong></p>
                     <p class="text-gray-700">लाइसेन्स नम्बर: <span id="dispNo" class="font-mono bg-gray-200 px-1 rounded font-bold">-</span></p>
                     <p class="text-gray-700">वर्ग (Category): <span id="dispCat" class="font-mono bg-gray-200 px-1.5 py-0.5 rounded font-bold">-</span></p>
@@ -125,10 +155,17 @@
             return str.replace(/[^0-9]/g, '').trim(); 
         }
 
+        function formatDateTime(isoString) {
+            if (!isoString) return 'नखुलेको';
+            const date = new Date(isoString);
+            return date.toLocaleString('ne-NP', { timeZone: 'Asia/Kathmandu', hour12: true });
+        }
+
         function hideAllAlertsAndSections() {
             document.getElementById('notFoundAlert').classList.add('hidden');
             document.getElementById('dbErrorAlert').classList.add('hidden');
             document.getElementById('successAlert').classList.add('hidden');
+            document.getElementById('alreadyCollectedAlert').classList.add('hidden');
             document.getElementById('detailsSection').classList.add('hidden');
         }
 
@@ -147,10 +184,10 @@
             const cleaned = cleanNumber(query);
             const pattern = `%${cleaned.split('').join('%')}%`;
 
-            // यस नम्बरका पुराना, नयाँ, कलेक्टेड, नभएका सबै रेकर्ड तान्ने
+            // नम्बर मिल्ने सबै रेकर्ड र संकलन रेकर्डहरू तान्ने
             const { data, error } = await supabaseClient
                 .from('licenses')
-                .select('*')
+                .select('*, collections(*)')
                 .or(`license_number.ilike.%${query}%,license_number.ilike.${pattern}`);
 
             searchBtn.disabled = false;
@@ -169,40 +206,68 @@
                 return;
             }
 
-            // डेटा ग्लोबल रिएबलमा सेभ गर्ने
             fetchedRecords = data;
             const primaryRecord = data[0];
             activeLicenseNumber = primaryRecord.license_number;
 
-            // 📦 सबै कार्डहरूको बक्सकोड लिष्ट तयार पार्ने र जस्ताको तस्तै देखाउने (डुप्लिकेट बक्स भए पनि देखाउँछ ताकि संख्या थाहा होस्)
+            // 🔍 चेक गर्ने: के कुनै एउटा मात्र कार्ड भए पनि कलेक्ट भइसकेको छ?
+            const collectedRecord = data.find(r => r.is_collected === true);
+
+            if (collectedRecord) {
+                // संकलन विवरण निकाल्ने
+                const history = collectedRecord.collections && collectedRecord.collections.length > 0 ? collectedRecord.collections[0] : null;
+                
+                // 📦 सबै कार्डहरूको बक्सकोड ऐतिहासिक अलर्ट बक्समा भर्ने र देखाउने
+                const historyBoxContainer = document.getElementById('historyBoxCodesList');
+                historyBoxContainer.innerHTML = ''; // पुराना ब्याजहरू हटाउने
+                
+                document.getElementById('historyCardCount').innerText = `${data.length} वटा कार्ड फेला`;
+
+                data.forEach((card) => {
+                    const box = card.box_code ? card.box_code.trim() : 'N/A';
+                    const statusText = card.is_collected ? ' (Collected)' : ' (Ready)';
+                    
+                    const span = document.createElement('span');
+                    // कलेक्टेडलाई फुस्रो र बाँकी कार्डहरूलाई गाढा रातो/पहेलो रंग दिने
+                    span.className = card.is_collected 
+                        ? "bg-slate-400 text-white font-mono font-bold px-2 py-0.5 rounded text-xs tracking-wider line-through shadow-xs"
+                        : "bg-amber-800 text-white font-mono font-bold px-2 py-0.5 rounded text-xs tracking-wider shadow-xs border border-amber-600";
+                    
+                    span.innerText = `${box}${statusText}`;
+                    historyBoxContainer.appendChild(span);
+                });
+
+                // ऐतिहासिक बक्समा डेटा पठाउने
+                document.getElementById('acHolder').innerText = collectedRecord.holder_name;
+                document.getElementById('acNo').innerText = collectedRecord.license_number;
+                document.getElementById('acCollector').innerText = history ? history.collector_name : 'स्वयं (वा रेकर्ड नमिलेको)';
+                document.getElementById('acPhone').innerText = (history && history.collector_phone) ? history.collector_phone : 'उपलब्ध छैन';
+                document.getElementById('acDate').innerText = history ? formatDateTime(history.created_at) : 'नखुलेको';
+
+                document.getElementById('alreadyCollectedAlert').classList.remove('hidden');
+                resetFormToFresh(false);
+                return;
+            }
+
+            // 🟢 यदि कुनै पनि कार्ड कलेक्ट भएको छैन भने मात्र वितरण फारम खोल्ने
             const boxCodesContainer = document.getElementById('dispBoxCodesList');
             boxCodesContainer.innerHTML = ''; 
             
-            data.forEach((card, index) => {
+            data.forEach((card) => {
                 const box = card.box_code ? card.box_code.trim() : 'N/A';
-                const statusText = card.is_collected ? ' (Collected)' : ' (Ready)';
-                
                 const span = document.createElement('span');
-                // यदि पहिले नै कलेक्टेड मार्क छ भने फुस्रो, छैन भने चम्किलो पहेलो रङ दिने
-                span.className = card.is_collected 
-                    ? "bg-slate-400 text-white font-mono font-bold px-2.5 py-1 rounded text-xs tracking-wider line-through shadow-xs"
-                    : "bg-amber-800 text-white font-mono font-bold px-2.5 py-1 rounded text-xs tracking-wider shadow-xs border border-amber-600";
-                
-                span.innerText = `${box}${statusText}`;
+                span.className = "bg-amber-800 text-white font-mono font-bold px-2.5 py-1 rounded text-xs tracking-wider shadow-xs";
+                span.innerText = box;
                 boxCodesContainer.appendChild(span);
             });
 
             document.getElementById('cardCountBadge').innerText = `${data.length} वटा कार्ड फेला`;
-
-            // विवरण फारममा डेटा पठाउने
             document.getElementById('dispName').innerText = primaryRecord.holder_name;
             document.getElementById('dispNo').innerText = primaryRecord.license_number;
             
-            // सबै विधा (Categories) जोडेर देखाउने
             const categories = [...new Set(data.map(r => r.category).filter(Boolean))].join(', ');
             document.getElementById('dispCat').innerText = categories || '-';
 
-            // इनपुट फारम सफा गर्ने
             document.getElementById('cName').value = '';
             document.getElementById('cPhone').value = '';
 
@@ -217,7 +282,6 @@
             selfBtn.innerText = "प्रक्रिया चल्दैछ...";
             selfBtn.disabled = true;
 
-            // अझै कलेक्ट नभएका रेकर्डहरूको मात्र कलेक्सन इन्ट्री हाल्ने (ताकि डुप्लिकेट हिस्ट्री नबसोस्)
             const uncollectedRecords = fetchedRecords.filter(r => !r.is_collected);
             
             if (uncollectedRecords.length > 0) {
@@ -232,7 +296,6 @@
                     .insert(inserts);
 
                 if (insError) {
-                    console.error(insError);
                     hideAllAlertsAndSections();
                     document.getElementById('dbErrorAlert').classList.remove('hidden');
                     selfBtn.innerText = "👤 होल्डर स्वयं उपस्थित भई सबै कार्ड संकलन/डिस्पोज गरियो (1-Click Update)";
@@ -241,14 +304,12 @@
                 }
             }
 
-            // 🎯 मुख्य अपरेसन: यस लाइसेन्स नम्बरका सबै रेकर्डलाई एकै पटक TRUE बनाउने
             const { error: updError } = await supabaseClient
                 .from('licenses')
                 .update({ is_collected: true })
                 .eq('license_number', activeLicenseNumber);
 
             if (updError) {
-                console.error(updError);
                 document.getElementById('dbErrorAlert').classList.remove('hidden');
                 selfBtn.disabled = false;
                 return;
@@ -288,23 +349,19 @@
                     .insert(inserts);
 
                 if (insError) {
-                    console.error(insError);
                     hideAllAlertsAndSections();
                     document.getElementById('dbErrorAlert').classList.remove('hidden');
-                    otherSubmitBtn.innerText = "अन्य व्यक्तिको विवरण राखी सबै रेकर्ड Collected मार्क गर्नुहोस्";
                     otherSubmitBtn.disabled = false;
                     return;
                 }
             }
 
-            // 🎯 मुख्य अपरेसन: यस लाइसेन्स नम्बरका सबै रेकर्डलाई एकै पटक TRUE बनाउने
             const { error: updError } = await supabaseClient
                 .from('licenses')
                 .update({ is_collected: true })
                 .eq('license_number', activeLicenseNumber);
 
             if (updError) {
-                console.error(updError);
                 document.getElementById('dbErrorAlert').classList.remove('hidden');
                 otherSubmitBtn.disabled = false;
                 return;
