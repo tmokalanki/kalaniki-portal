@@ -6,7 +6,6 @@
     <title>लाइसेन्स वितरण प्रतिवेदन | License Distribution Report - Kalanki</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans antialiased">
@@ -32,7 +31,7 @@
             
             <div id="loadingOverlay" class="text-center py-16 bg-white rounded-lg border border-gray-200 shadow-xs">
                 <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-800 border-t-transparent mb-3"></div>
-                <p class="text-sm text-gray-600 font-bold">डेटाबेसबाट प्रतिवेदन तयार गरिँदैछ, कृपया केही क्षण पर्खनुहोस्...</p>
+                <p class="text-sm text-gray-600 font-bold">डेटाबेсахबाट प्रतिवेदन तयार गरिँदैछ, कृपया केही क्षण पर्खनुहोस्...</p>
                 <p class="text-xs text-gray-400 mt-1 font-mono">Generating report from database, please wait...</p>
             </div>
 
@@ -126,7 +125,8 @@
                                 </tr>
                             </thead>
                             <tbody id="recentActivityTable" class="divide-y divide-gray-100 text-gray-700">
-                                </tbody>
+                                <tr><td colspan="6" class="p-4 text-center text-gray-400 text-xs">डेटा लोड हुँदैछ...</td></tr>
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -141,7 +141,6 @@
     </div>
 
     <script>
-        // Supabase Credentials
         const SUPABASE_URL = "https://gbuvycslvvqaafwnugsi.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdidXZ5Y3NsdnZxYWFmd251Z3NpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4OTUyNDEsImV4cCI6MjA5NzQ3MTI0MX0.Rl6qprZT6uMfsCX33pXgrM8owe7o6O_zAHjZUw3fixg";
 
@@ -191,18 +190,27 @@
                     .from('collections')
                     .select('*', { count: 'exact', head: true });
 
-                // 4. Recent Activity (Last 10 Records)
-                const { data: recentCollections } = await supabaseClient
+                // 4. Recent Activity (सुधारिएको एड्भान्स कोइरी: रिलेसन जुनसुकै नाममा भए पनि तान्ने)
+                const { data: recentCollections, error: errRecent } = await supabaseClient
                     .from('collections')
-                    .select('*, licenses(license_number, box_code)')
+                    .select(`
+                        id, 
+                        collector_name, 
+                        collector_phone, 
+                        created_at, 
+                        license_id,
+                        licenses (license_number, box_code)
+                    `)
                     .order('created_at', { ascending: false })
                     .limit(10);
 
-                // Populate UI
-                document.getElementById('statTotalCards').innerText = totalCards.toLocaleString();
-                document.getElementById('statTotalCollected').innerText = totalCollected.toLocaleString();
+                if (errRecent) console.error("Recent Collections Query Error: ", errRecent);
+
+                // Populate UI Numbers
+                document.getElementById('statTotalCards').innerText = (totalCards || 0).toLocaleString();
+                document.getElementById('statTotalCollected').innerText = (totalCollected || 0).toLocaleString();
                 
-                const remaining = totalCards - totalCollected;
+                const remaining = (totalCards || 0) - (totalCollected || 0);
                 document.getElementById('statRemainingCards').innerText = remaining.toLocaleString();
 
                 const progressPercent = totalCards > 0 ? ((totalCollected / totalCards) * 100).toFixed(1) : 0;
@@ -220,16 +228,22 @@
                 if (recentCollections && recentCollections.length > 0) {
                     recentCollections.forEach((item, index) => {
                         const dateObj = new Date(item.created_at);
-                        const formattedDate = dateObj.toLocaleDateString('ne-NP', { hour: '2-digit', minute: '2-digit' });
+                        const formattedDate = dateObj.toLocaleDateString('ne-NP', { hour: '2-digit', minute: '2-digit', hour12: true });
                         
-                        const licNum = item.licenses ? item.licenses.license_number : '-';
-                        const boxCode = item.licenses ? item.licenses.box_code : '-';
+                        // सुपाबेसमा फरेन-की सिङ्गल अब्जेक्ट वा एरे (Array) जुनसुकै रूपमा आए पनि सुरक्षित तरिकाले डेटा पढ्ने लोजिक:
+                        let licenseInfo = null;
+                        if (item.licenses) {
+                            licenseInfo = Array.isArray(item.licenses) ? item.licenses[0] : item.licenses;
+                        }
+
+                        const licNum = licenseInfo && licenseInfo.license_number ? licenseInfo.license_number : 'नखुलेको / -';
+                        const boxCode = licenseInfo && licenseInfo.box_code ? licenseInfo.box_code.trim() : '-';
 
                         const row = `
                             <tr class="hover:bg-gray-50 transition border-b border-gray-100">
                                 <td class="p-3 text-center font-mono text-gray-400">${index + 1}</td>
-                                <td class="p-3 font-semibold text-gray-900">${item.collector_name}</td>
-                                <td class="p-3 font-mono text-blue-700">${item.collector_phone}</td>
+                                <td class="p-3 font-semibold text-gray-900">${item.collector_name || '-'}</td>
+                                <td class="p-3 font-mono text-blue-700">${item.collector_phone || '-'}</td>
                                 <td class="p-3 font-mono text-gray-600">${licNum}</td>
                                 <td class="p-3"><span class="bg-blue-100 text-blue-800 px-2.5 py-0.5 rounded font-bold font-mono text-xs">${boxCode}</span></td>
                                 <td class="p-3 text-right text-xs text-gray-500 font-mono">${formattedDate}</td>
@@ -241,7 +255,6 @@
                     tableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-400 text-xs">विवरण उपलब्ध छैन / No records found.</td></tr>`;
                 }
 
-                // Update Last Sync Time
                 const timeNow = new Date();
                 document.getElementById('lastUpdated').innerText = `अपडेट / Sync: ${timeNow.toLocaleTimeString('ne-NP')}`;
 
