@@ -174,34 +174,34 @@
                 const { count: todayCount } = await supabaseClient
                     .from('collections')
                     .select('*', { count: 'exact', head: true })
-                    .gte('created_at', startOfToday);
+                    .gte('collected_at', startOfToday);
 
                 const { count: weekCount } = await supabaseClient
                     .from('collections')
                     .select('*', { count: 'exact', head: true })
-                    .gte('created_at', oneWeekAgo);
+                    .gte('collected_at', oneWeekAgo);
 
                 const { count: monthCount } = await supabaseClient
                     .from('collections')
                     .select('*', { count: 'exact', head: true })
-                    .gte('created_at', oneMonthAgo);
+                    .gte('collected_at', oneMonthAgo);
 
                 const { count: lifetimeCount } = await supabaseClient
                     .from('collections')
                     .select('*', { count: 'exact', head: true });
 
-                // 4. Recent Activity (सुधारिएको एड्भान्स कोइरी: रिलेसन जुनसुकै नाममा भए पनि तान्ने)
+                // 4. Recent Activity (सम्बन्धित फरेन-की `license_id` प्रस्ट खुलाएर डेटा तानिएको)
                 const { data: recentCollections, error: errRecent } = await supabaseClient
                     .from('collections')
                     .select(`
                         id, 
                         collector_name, 
                         collector_phone, 
-                        created_at, 
+                        collected_at, 
                         license_id,
-                        licenses (license_number, box_code)
+                        licenses:license_id (license_number, box_code)
                     `)
-                    .order('created_at', { ascending: false })
+                    .order('collected_at', { ascending: false })
                     .limit(10);
 
                 if (errRecent) console.error("Recent Collections Query Error: ", errRecent);
@@ -227,10 +227,9 @@
 
                 if (recentCollections && recentCollections.length > 0) {
                     recentCollections.forEach((item, index) => {
-                        const dateObj = new Date(item.created_at);
+                        const dateObj = new Date(item.collected_at);
                         const formattedDate = dateObj.toLocaleDateString('ne-NP', { hour: '2-digit', minute: '2-digit', hour12: true });
                         
-                        // सुपाबेसमा फरेन-की सिङ्गल अब्जेक्ट वा एरे (Array) जुनसुकै रूपमा आए पनि सुरक्षित तरिकाले डेटा पढ्ने लोजिक:
                         let licenseInfo = null;
                         if (item.licenses) {
                             licenseInfo = Array.isArray(item.licenses) ? item.licenses[0] : item.licenses;
