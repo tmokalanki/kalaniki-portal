@@ -47,7 +47,7 @@
                 </div>
 
                 <div id="successAlert" class="hidden p-4 bg-green-50 border-2 border-green-400 text-green-900 rounded-lg space-y-1 text-center">
-                    <h3 class="font-bold text-base">🎉 वितरण रेकرد सफलतापूर्वक अद्यावधिक भयो !</h3>
+                    <h3 class="font-bold text-base">🎉 वितरण रेकर्ड सफलतापूर्वक अद्यावधिक भयो !</h3>
                     <p class="text-xs text-gray-600">प्रणाली सुरक्षित छ। अब सिधै अर्को नयाँ नम्बर सर्च गर्न सक्नुहुन्छ।</p>
                 </div>
 
@@ -57,6 +57,14 @@
                         <p class="text-[11px] text-red-600 font-medium font-mono">This card has already been dispatched.</p>
                     </div>
                     
+                    <!-- 📦 बक्स कोडहरू लिस्ट गर्ने थपिएको नयाँ सेक्सन -->
+                    <div class="bg-amber-100 p-3 rounded-md border border-amber-300 text-sm text-amber-900">
+                        <p class="font-bold mb-1">📦 यस लाइसेन्ससँग सम्बन्धित सबै बाकस कोडहरू (Box Codes):</p>
+                        <div id="acBoxCodesList" class="flex flex-wrap gap-2 mt-1">
+                            <!-- बक्सकोडका ब्याजहरू यहाँ जाभास्क्रिप्टले भर्नेछ -->
+                        </div>
+                    </div>
+
                     <div class="bg-white p-4 rounded-md border border-red-200 space-y-2 text-sm text-gray-700 font-semibold shadow-xs">
                         <p class="text-xs text-slate-400 font-bold uppercase tracking-wider border-b pb-1">प्रणालीमा दर्ता भएको ऐतिहासिक रेकर्ड:</p>
                         <p>लाइसेन्स धनी: <span id="acHolder" class="text-gray-950 font-bold">-</span></p>
@@ -141,7 +149,6 @@
             return date.toLocaleString('ne-NP', { timeZone: 'Asia/Kathmandu', hour12: true });
         }
 
-        // सबै अलर्ट र बाकसहरू लुकाउने कमन फङ्सन
         function hideAllAlertsAndSections() {
             document.getElementById('notFoundAlert').classList.add('hidden');
             document.getElementById('dbErrorAlert').classList.add('hidden');
@@ -160,12 +167,12 @@
             searchBtn.disabled = true;
             loading.classList.remove('hidden');
             
-            // नयाँ सर्च सुरु हुँदा पुराना सबै स्टाटस मेसेज लुकाउने
             hideAllAlertsAndSections();
 
             const cleaned = cleanNumber(query);
             const pattern = `%${cleaned.split('').join('%')}%`;
 
+            // लाइसेन्सका सबै म्याचिङ रेकर्डहरू र तिनीहरूका कलेक्सन इतिहासहरू तान्ने
             const { data, error } = await supabaseClient
                 .from('licenses')
                 .select('*, collections(*)')
@@ -174,7 +181,6 @@
             searchBtn.disabled = false;
             loading.classList.add('hidden');
 
-            // यदि डेटाबेस कनेक्सनमा त्रुटि आएमा (पेजमै देखिने)
             if (error) {
                 console.error(error);
                 document.getElementById('dbErrorAlert').classList.remove('hidden');
@@ -182,21 +188,35 @@
                 return;
             }
 
-            // यदि रेकर्ड फेला परेन भने (पेजमै देखिने स्टाटस)
             if (!data || data.length === 0) {
                 document.getElementById('notFoundAlert').classList.remove('hidden');
                 resetFormToFresh(false);
                 return;
             }
 
-            const record = data[0];
+            // 🔍 मुख्य लोजिक: खोजिएका रेकर्डहरू मध्ये कुनै एउटा मात्र पनि पहिले नै संकलन भइसकेको छ कि छैन जाँच्ने
+            const collectedRecord = data.find(r => r.is_collected === true);
+            
+            // डेटाबेसमा भएका सबै म्याचिङ कार्डहरूको 'box_code' लाई एउटा युनिक लिष्ट बनाउने
+            const allBoxCodes = [...new Set(data.map(r => r.box_code ? r.box_code.trim() : 'N/A'))];
 
-            // 📌 यदि कार्ड पहिले नै वितरण भइसकेको छ भने (पेजमै इतिहास बक्स खुल्नेछ)
-            if (record.is_collected) {
-                const history = record.collections && record.collections.length > 0 ? record.collections[0] : null;
+            if (collectedRecord) {
+                // संकलन भइसकेको रेकर्डको कलेक्सन विवरण निकाल्ने
+                const history = collectedRecord.collections && collectedRecord.collections.length > 0 ? collectedRecord.collections[0] : null;
                 
-                document.getElementById('acHolder').innerText = record.holder_name;
-                document.getElementById('acNo').innerText = record.license_number;
+                // बक्सकोडको लिष्टलाई HTML ब्याज (Badges) मा रूपान्तरण गरेर देखाउने
+                const boxCodesContainer = document.getElementById('acBoxCodesList');
+                boxCodesContainer.innerHTML = ''; // पुरानो डेटा सफा गर्ने
+                
+                allBoxCodes.forEach(box => {
+                    const span = document.createElement('span');
+                    span.className = "bg-amber-800 text-white font-mono font-bold px-2 py-0.5 rounded text-xs tracking-wider";
+                    span.innerText = box;
+                    boxCodesContainer.appendChild(span);
+                });
+
+                document.getElementById('acHolder').innerText = collectedRecord.holder_name;
+                document.getElementById('acNo').innerText = collectedRecord.license_number;
                 document.getElementById('acCollector').innerText = history ? history.collector_name : 'स्वयं (वा रेकर्ड नमिलेको)';
                 document.getElementById('acPhone').innerText = (history && history.collector_phone) ? history.collector_phone : 'उपलब्ध छैन';
                 document.getElementById('acDate').innerText = history ? formatDateTime(history.created_at) : 'नखुलेको';
@@ -206,7 +226,9 @@
                 return;
             }
 
-            // यदि कार्ड वितरण गर्न बाँकी छ भने मुख्य फारम खुला गर्ने
+            // यदि कुनै पनि रेकर्ड संकलन भएको छैन भने वितरण गर्न बाँकी रहेको (is_collected = false) सबैभन्दा नयाँ कार्ड देखाउने
+            // (यदि मल्टिपल कार्ड छन् भने पहिलो रेकर्डलाई एक्टिभ मान्छ)
+            const record = data[0];
             activeLicense = record;
             document.getElementById('dispName').innerText = record.holder_name;
             document.getElementById('dispNo').innerText = record.license_number;
@@ -292,7 +314,6 @@
             showSuccessAndPrepareNext();
         });
 
-        // सफलताको स्टाटस देखाउने र फर्म क्लियर गर्ने
         function showSuccessAndPrepareNext() {
             document.getElementById('detailsSection').classList.add('hidden');
             document.getElementById('successAlert').classList.remove('hidden');
@@ -312,7 +333,7 @@
                 inputField.value = '';
             }
             inputField.focus(); 
-            inputField.select(); // अर्को नम्बर टाईप गर्न सजिलो बनाउन सिलेक्ट गरिदिने
+            inputField.select();
         }
     </script>
 </body>
