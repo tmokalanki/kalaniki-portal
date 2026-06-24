@@ -10,7 +10,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
-        /* प्रिन्ट वा पीडीएफ डाउनलोड गर्दा रसिद बाहेक अरु सबै कुरा स्वचालित रूपमा लुक्ने विशेष नियम */
         @media print {
             body {
                 background-color: #ffffff !important;
@@ -174,6 +173,14 @@
         function cleanNumber(str) { 
             return str.replace(/[^0-9]/g, '').trim(); 
         }
+
+        // नेपाली अंकलाई अंग्रेजी अंकमा बदल्ने फङ्सन
+        function convertToEnglishNumbers(str) {
+            const nepaliDigits = ['०', '१', '२', '३', '४', '५', '६', '७', '८', '९'];
+            return str.replace(/[०-९]/g, function (w) {
+                return nepaliDigits.indexOf(w);
+            });
+        }
         
         function formatBoxCode(boxNo) {
             if (!boxNo) return 'उपलब्ध नभएको / Not Available';
@@ -192,10 +199,15 @@
             }
         }
 
-        // जाँच फारम सबमिट गर्दा (सिधै स्टेप २ मा लैजाने र विवरण देखाउने)
+        // जाँच फारम सबमिट गर्दा
         document.getElementById('searchForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const query = document.getElementById('searchQuery').value.trim();
+            let query = document.getElementById('searchQuery').value.trim();
+            
+            // नेपाली अंक आएमा अंग्रेजीमा कन्भर्ट गर्ने
+            query = convertToEnglishNumbers(query);
+            document.getElementById('searchQuery').value = query;
+
             const searchBtn = document.getElementById('searchBtn');
             const resultDiv = document.getElementById('searchResult');
             
@@ -221,7 +233,6 @@
                 return;
             }
 
-            // १. डाटा नभेटिँदाको नयाँ नेपाली सन्देश (स्टेप १ मै बस्छ)
             if (!data || data.length === 0) {
                 resultDiv.classList.remove('hidden');
                 resultDiv.innerHTML = `<div class="p-4 bg-red-50 border border-red-300 text-red-800 rounded-md text-xs sm:text-sm space-y-1 shadow-xs leading-relaxed">
@@ -231,7 +242,6 @@
                 return;
             }
 
-            // २. भेटियो तर पहिले नै वितरण भइसकेको छ भने (स्टेप १ मै बस्छ)
             if (data[0].is_collected) {
                 resultDiv.classList.remove('hidden');
                 const collectorInfo = data[0].collections && data[0].collections.length > 0 ? data[0].collections[0] : null;
@@ -256,8 +266,7 @@
                 return;
             }
 
-            // ३. लाइसेन्स फेला पर्यो र वितरण हुन बाँकी छ भने सिधै विवरण र इनपुट बक्स एउटै स्क्रिन (स्टेप २) मा देखाउने
-            selectedLicense = data[0]; // पहिलो रेकर्ड सेट गर्ने
+            selectedLicense = data[0];
             
             document.getElementById('selectedDetails').innerHTML = `
                 <p class="text-blue-900 font-bold text-xs sm:text-sm border-b pb-1">लाइसेन्स विवरण (License Details):</p>
@@ -269,7 +278,6 @@
             goToStep(2);
         });
 
-        // बुझिलिनेको विवरण सबमिट गर्दा
         document.getElementById('collectorForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = document.getElementById('collectorName').value.trim();
@@ -307,7 +315,6 @@
                 console.error("Status Update Error:", updateError);
             }
 
-            // रसिद र बक्स कोड सेट गर्ने
             document.getElementById('finalBoxCode').innerText = formatBoxCode(selectedLicense.box_code);
             document.getElementById('rHolder').innerText = selectedLicense.holder_name;
             document.getElementById('rNumber').innerText = selectedLicense.license_number;
@@ -318,7 +325,6 @@
             goToStep(3);
         });
 
-        // पछाडि फर्किँदा फारम क्लियर गर्ने फङ्सन
         window.cancelAndBack = function() {
             selectedLicense = null;
             document.getElementById('collectorForm').reset();
@@ -327,7 +333,6 @@
             goToStep(1);
         }
 
-        // डाउनलोड/प्रिन्ट विधि
         window.downloadReceiptPDF = function() {
             try {
                 window.print();
@@ -347,22 +352,17 @@
             }
         }
 
-        // फारम र डेटा पूर्ण रूपमा रिसर्ट गर्ने फङ्सन (अर्को नयाँ खोजी बटन)
         window.resetApp = function() {
             selectedLicense = null;
-            
-            // सबै फारमहरू रिसेट
             document.getElementById('searchForm').reset();
             document.getElementById('collectorForm').reset();
             
-            // डेटा कन्टेनरहरू खाली
             document.getElementById('searchResult').innerHTML = '';
             document.getElementById('searchResult').classList.add('hidden');
             document.getElementById('selectedDetails').innerHTML = '';
             document.getElementById('formError').innerText = '';
             document.getElementById('formError').classList.add('hidden');
             
-            // बटनको री-एक्टिभेसन
             const submitBtn = document.getElementById('submitDetailsBtn');
             submitBtn.innerText = "संकलन गर्नुहोस् / Proceed";
             submitBtn.disabled = false;
